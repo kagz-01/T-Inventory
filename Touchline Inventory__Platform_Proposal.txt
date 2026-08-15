@@ -1,0 +1,129 @@
+﻿
+PROJECT PROPOSAL
+Branded Products Sourcing, Branding & Distribution Platform
+For Promotional Merchandise, Signage & Tender-Based Fulfillment
+Prepared for: Touchline  Management / Company Leadership
+Prepared by: Kenneth Kagunya
+Date: 9 August 2026
+
+1. Executive Summary
+Our business fulfills client tenders in three stages: we source raw, unbranded promotional products and signage materials from suppliers around Kenya (bags, wallets, caps, T-shirts, mugs, pens, umbrellas, acrylic, vinyl, and similar items); we send those products to a branding partner to apply the client's logo or design (screen print, embroidery, heat transfer, engraving, etc.); and once branded and quality-checked, we distribute the finished goods to the client or tender recipient(s).
+Until now, this process has lived in phone calls, WhatsApp messages, and memory. There has been no single place to see which promo shop has what raw product, which branding partner is working on it, what it's costing at each stage, or who received the finished goods and when.
+This proposal describes the Sourcing, Branding & Distribution Platform, which has now been built and is ready for setup: an admin-driven, invite-only system, accessible on both web and mobile, that follows every item through all three stages  sourcing, branding, and distribution  with a clean handoff whenever a task moves from one employee to another, and a proper team-management layer for adding staff securely as the company grows.
+2. Objectives
+    • Track every item through all three stages of fulfillment  sourced, branded, distributed  not just “bought or not.”
+    • Give management a single dashboard to see products, materials, vendors (both sourcing and branding), prices, and progress at a glance.
+    • Support tender-based work  group multiple items under one client order and track progress toward fulfilling it, including partial deliveries to multiple recipients.
+    • Remove dependency on any one employee's memory or phone  if staff changes, the task and its history stay with the company.
+    • Keep a record of branding costs, methods, and client artwork tied to each item, alongside proof of the finished branded product.
+    • Keep proof of delivery for every hand-over, since tenders are often audited.
+    • Control exactly who can access company sourcing data  no open sign-up, every account traces back to an invite the admin sent.
+3. What We're Sourcing & Branding
+The platform covers two related product families that our business regularly sources and brands:
+Category	Examples
+Bags	Tote bags, conference bags, laptop bags, drawstring bags
+Wallets & Cardholders	Leather and faux-leather wallets, card holders, passport holders
+Headwear	Caps, hats, visors
+Apparel	T-shirts, polos, hoodies, branded workwear
+Drinkware	Mugs, flasks, water bottles, tumblers
+Writing & Stationery	Pens, notebooks, diaries, folders
+Tech Accessories	USB flash drives, power banks, mouse pads
+Everyday Branded Items	Umbrellas, lanyards, keyholders, badges
+Signage & Fabrication Materials	Acrylic sheets, vinyl rolls, aluminum composite panels, LED modules, foam board, wood
+
+Every category above moves through the same three-stage workflow: source the raw product, brand it, distribute it  whether it's 200 tote bags for a county tender or 20 sheets of acrylic for a shopfront sign.
+4. Core Modules & Features (Built)
+4.1 Products & Materials Catalogue
+    • Item name, category (Bags, Wallets, Caps, Apparel, Drinkware, Signage Materials, etc.)
+    • Unit of measure (pieces, sheets, rolls, dozens, meters)
+    • Current stock on hand and reorder threshold, with automatic low-stock alerts
+    • Photo gallery of the item and any sample/mockup images
+4.2 Vendor Directory  Sourcing & Branding Partners
+One directory, but every vendor is tagged by what they do, so the right list of vendors shows up at the right stage of a task:
+Vendor Type	Role in the pipeline
+Sourcing	Promo shops and material suppliers who sell the raw/blank product (unbranded bags, caps, wallets, acrylic sheets, etc.)
+Branding	Printers, embroiderers, and engravers who apply the client's logo or design to the product
+Both	A vendor who can supply the product and also brand it in-house
+
+    • Vendor name, location/address, contact person and phone number
+    • Items each sourcing vendor supplies, linked back to the catalogue, with price per item  enabling side-by-side comparison across promo shops
+    • Internal notes/reliability rating for both sourcing and branding partners
+4.3 Sourcing Task Board  the full pipeline
+This is where the boss creates a request  for example, “need 200 branded tote bags”  and assigns it to an employee. Each task moves through the complete pipeline, from first contact with a promo shop to the branded goods being handed over:
+Status	Meaning
+Pending	Task created, not yet assigned or not yet started
+Assigned	An employee has been given the task
+Searching	Employee is actively out sourcing / contacting promo shops or vendors
+Reassigned	Task handed to a new employee (original could not continue)
+Found	Vendor located, price and quantity confirmed
+Sample Collected	Physical sample or mockup photo obtained
+Awaiting Approval	Sent to admin/boss for sign-off
+Purchased	Raw/blank product bought and in stock  ready to be branded
+Branding In Progress	Sent to a branding partner: screen print, embroidery, heat transfer, engraving, etc.
+Branding Complete	Branded goods returned and quality-checked  ready to hand over
+Distributed	Handed over to the client / tender recipient(s), with proof of delivery
+Unavailable	Vendor could not supply; task returns to Pending for reassignment
+
+4.4 Branding Stage
+Once a raw product is purchased, it moves into branding. The task records:
+    • Which branding partner is doing the work, pulled from the Branding-tagged vendors
+    • The branding method  screen print, embroidery, heat transfer, engraving, digital print, sublimation, or other
+    • The branding cost, tracked separately from the product's purchase price
+    • The client's artwork or logo file, uploaded and attached directly to the task so the branding partner always has the right version
+    • A photo of the finished branded item, for quality confirmation before it moves to distribution
+4.5 Distribution Stage
+Tenders are frequently fulfilled to more than one recipient  different offices, branches, or beneficiaries on a list  so distribution is tracked as individual hand-over records rather than a single “delivered” checkbox:
+    • Each hand-over records the recipient, quantity, date, and who on the team delivered it
+    • A running balance shows how much of the total order is still outstanding
+    • The task automatically closes out as Distributed once the full quantity has been handed over
+    • Proof of delivery can be attached, useful for tender audits and client sign-off
+4.6 Employee Handoff & Reassignment
+A key real-world requirement: field work doesn't stop because one person is unavailable. The platform is built so a task is never stuck with a single person, at any stage of the pipeline.
+    • Continuity: Every task can be reassigned from one employee to another at any point  the full history of who worked on it, what they found, and what stage it reached is preserved, not lost.
+    • Easy handoff: If an employee is sick, off-site, or reassigned to something else, the boss (or the employee themselves) can hand off the task with one action.
+    • No lost context: The receiving employee sees everything already gathered  promo shop visited, price quoted, branding partner engaged, photos taken  so they pick up exactly where their colleague left off.
+    • Audit trail: A timeline on each task shows every employee who touched it, what they updated, and when.
+    • Stall alerts: The system flags tasks that have sat too long with no update, prompting the boss to reassign proactively.
+4.7 Tenders / Client Orders (Projects)
+    • Group multiple sourcing tasks under a specific client tender or job (e.g., “County Government Branding Tender”)
+    • See at a glance what a tender still needs, at whichever stage each item currently sits, before it can move to full delivery
+4.8 Dashboard & Alerts
+    • Role-aware dashboard: field employees land straight on “My Tasks”; the boss and managers see the full company-wide view.
+    • Low-stock alerts pushed to the boss or a store manager
+    • Stalled-task alerts (no activity for 48+ hours) so nothing falls through the cracks at any stage
+    • Activity feed showing recent updates across all tasks
+4.9 Team Management & Invite-Only Access
+This is the piece that makes the platform safe to hand to a growing team, not just usable by one admin. Nobody can create an account on their own  every person on the platform got there because someone with the right permissions let them in.
+    • Invite-only sign-in: There is no public sign-up. The boss or a manager sends an invite to a teammate's email with a role attached (Admin, Manager, or Field Employee). The teammate signs in with that exact Google account and is automatically placed in the company workspace with the assigned role.
+    • Team & Settings page: A dedicated screen where the boss (or a manager) sends invites, sees who's still pending, resends or revokes an invite that hasn't been accepted yet, and changes a team member's role.
+    • Instant access removal: Deactivating a team member doesn't just hide them from a list  it immediately ends their active session.
+    • Guard rail on the door: Anyone who tries to sign in without an invite sees a clear “you haven't been invited yet” message.
+    • Access audit trail: A separate log tracks who was invited, by whom, when an invite was accepted, and any role or access changes.
+    • Built to grow: Every piece of company data  products, vendors, tasks, tenders  is already isolated under your company's own workspace. If the business ever wants to run a second branch or entity on the same platform, that's a configuration change, not a rebuild.
+4.10 Roles & Access
+    • Admin / Boss: Full visibility, creates and reassigns tasks, approves purchases, manages vendors and catalogue, invites teammates, changes staff roles, deactivates access.
+    • Manager: Can manage the catalogue and vendors, assign/reassign tasks, approve purchases, and invite Field Employees.
+    • Field Employee: Sees only their own assigned tasks, updates status through every stage, uploads photos and vendor info, can request a handoff.
+5. Technology In Use
+Since staff walk around with their phones while sourcing and delivering, the platform needed to work comfortably on mobile as well as give management a full desktop dashboard. Rather than building two separate apps, one shared codebase covers both:
+Layer	Technology in use
+Frontend (Web + Mobile)	Next.js (React), built as a Progressive Web App (PWA)  one codebase serves the admin web dashboard AND an installable app on employees' phones (Add to Home Screen, no app-store approval needed). Mobile view includes a thumb-reach bottom navigation bar for field staff.
+Backend / API	Next.js API routes (Node.js)  handles business logic, roles/permissions, task reassignment history, and workspace-level data isolation
+Database	Supabase (PostgreSQL)  production-grade managed database
+File Storage	Supabase Storage  sourcing sample photos, client artwork/logo files, branded-item proof photos, delivery proof photos
+Authentication	Google sign-in (NextAuth), invite-only  staff log in with their company Google account only after being invited; roles: Admin/Boss, Manager, Field Employee
+Hosting	Deployable to Vercel, connected directly to the Supabase database
+
+Why this approach:
+    • One codebase for web dashboard and mobile experience  lower cost, faster updates, one place to fix bugs.
+    • Employees simply open a link on their phone and “Add to Home Screen”  it behaves like a normal app icon, no app-store approval delays.
+    • Supabase (PostgreSQL) is a production-grade managed database, giving the platform reliable, scalable storage from day one.
+    • Invite-only access means the company controls exactly who is on the platform at all times.
+6. Expected Benefits
+    • Full visibility across all three stages  nothing gets “lost” between being bought, being branded, and reaching the client.
+    • No more lost information when staff are sick, busy, or leave the company  tasks, promo-shop knowledge, and branding-partner relationships stay with the business.
+    • Clear accountability  the boss can see exactly who did what and when, at every stage of every tender item.
+    • Better negotiating position with both sourcing and branding vendors, backed by a visible cost history.
+    • Tenders tracked end-to-end, from the first item sourced to full, proven distribution.
+    • Controlled, auditable access  new hires are added deliberately by invite, and access is revoked instantly the moment someone leaves.
+

@@ -1,0 +1,472 @@
+// ==========================================================
+// Signage & Branding Materials Sourcing / Inventory Platform
+// Database: Supabase Postgres
+// ==========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")   // pooled connection (pgbouncer) - use for app runtime
+  directUrl = env("DIRECT_URL")     // direct connection - required for migrations
+}
+
+// ----------------------
+// Auth (NextAuth models)
+// ----------------------
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ----------------------
+// Organizations (multi-tenant boundary)
+// ----------------------
+
+model Organization {
+  id           String   @id @default(cuid())
+  name         String
+  logoUrl      String?
+  contactEmail String?
+  contactPhone String?
+  currency     String   @default("KES")
+  plan         String   @default("FREE") // dormant hook for billing later
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users     User[]
+  materials Material[]
+  vendors   Vendor[]
+  projects  Project[]
+  tasks     SourcingTask[]
+  invites   Invite[]
+  auditLogs OrgAuditLog[]
+}
+
+// ----------------------
+// Invites
+// ----------------------
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  role           Role         @default(EMPLOYEE)
+  token          String       @unique @default(cuid())
+  status         InviteStatus @default(PENDING)
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organizationId String
+  invitedById    String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InvitesSent", fields: [invitedById], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+// Lightweight org-level audit log — separate from the per-task TaskEvent trail.
+// Covers invites and role/access changes, since "who gave X admin access" matters.
+enum OrgAuditEventType {
+  INVITE_SENT
+  INVITE_RESENT
+  INVITE_REVOKED
+  INVITE_ACCEPTED
+  ROLE_CHANGED
+  MEMBER_DEACTIVATED
+  MEMBER_REACTIVATED
+  ORG_UPDATED
+}
+
+model OrgAuditLog {
+  id             String            @id @default(cuid())
+  organizationId String
+  actorId        String?
+  type           OrgAuditEventType
+  targetEmail    String?
+  fromValue      String?
+  toValue        String?
+  note           String?
+  createdAt      DateTime          @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// ----------------------
+// Roles & Users
+// ----------------------
+
+enum Role {
+  ADMIN     // Boss - full access
+  MANAGER   // Can assign tasks, approve smaller purchases
+  EMPLOYEE  // Field staff - sees only their own tasks
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime?
+  image          String?
+  phone          String?
+  role           Role      @default(EMPLOYEE)
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  // Nullable: briefly unset between account creation and org-bootstrap/invite-consumption
+  // (see src/lib/auth.ts). A user with no organizationId cannot access any org-scoped data.
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  accounts Account[]
+  sessions Session[]
+
+  tasksAssigned   SourcingTask[]  @relation("AssignedTo")
+  tasksCreated    SourcingTask[]  @relation("CreatedBy")
+  taskEvents      TaskEvent[]
+  comments        TaskComment[]
+  invitesSent     Invite[]        @relation("InvitesSent")
+  distributionsRecorded DistributionRecord[]
+
+  @@index([organizationId])
+}
+
+// ----------------------
+// Materials
+// ----------------------
+
+model Material {
+  id              String   @id @default(cuid())
+  name            String
+  category        String   // e.g. Acrylic, Vinyl, LED, Aluminum Composite, Wood, Foam Board
+  unit            String   // sheets, rolls, meters, pieces, etc.
+  description     String?  @db.Text
+  stockOnHand     Float    @default(0)
+  reorderThreshold Float   @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  photos       MaterialPhoto[]
+  vendorLinks  VendorMaterial[]
+  tasks        SourcingTask[]
+
+  @@index([category])
+  @@index([organizationId])
+}
+
+model MaterialPhoto {
+  id         String   @id @default(cuid())
+  materialId String
+  url        String
+  caption    String?
+  createdAt  DateTime @default(now())
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------
+// Vendors
+// ----------------------
+
+model Vendor {
+  id            String     @id @default(cuid())
+  name          String
+  type          VendorType @default(SOURCING)
+  address       String?
+  contactName   String?
+  phone         String?
+  email         String?
+  notes         String?    @db.Text
+  rating        Int?     // 1-5, manual or derived
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  materialLinks     VendorMaterial[]
+  sourcingTasks     SourcingTask[]      @relation("SourcingVendor")
+  brandingTasks     SourcingTask[]      @relation("BrandingVendor")
+
+  @@index([organizationId])
+}
+
+// Join table: which vendor supplies which material, at what price & qty
+model VendorMaterial {
+  id              String   @id @default(cuid())
+  vendorId        String
+  materialId      String
+  price           Float
+  currency        String   @default("USD")
+  quantityAvail   Float?
+  lastCheckedAt   DateTime @default(now())
+
+  vendor   Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, materialId])
+}
+
+// ----------------------
+// Projects (optional grouping)
+// ----------------------
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  clientName  String?
+  description String?  @db.Text
+  status      String   @default("ACTIVE") // ACTIVE, COMPLETED, ON_HOLD
+  createdAt   DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  tasks SourcingTask[]
+
+  @@index([organizationId])
+}
+
+// ----------------------
+// Sourcing Tasks (core workflow)
+// ----------------------
+
+enum TaskStatus {
+  PENDING
+  ASSIGNED
+  SEARCHING
+  REASSIGNED
+  FOUND
+  SAMPLE_COLLECTED
+  AWAITING_APPROVAL
+  PURCHASED             // raw/blank product secured and in stock
+  BRANDING_IN_PROGRESS  // sent to a branding partner (print/embroidery/engraving/etc.)
+  BRANDING_COMPLETE     // branded goods returned, quality-checked, ready to hand over
+  DISTRIBUTED           // handed over to the client/tender recipient(s)
+  UNAVAILABLE
+}
+
+// A vendor can supply raw products, do branding work, or both - one directory,
+// filterable by what you're looking for at each stage of the task.
+enum VendorType {
+  SOURCING   // sells raw/blank products (promo shops, material suppliers)
+  BRANDING   // applies branding: printers, embroiderers, engravers
+  BOTH
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model SourcingTask {
+  id              String       @id @default(cuid())
+  title           String
+  materialId      String
+  quantityNeeded  Float
+  status          TaskStatus   @default(PENDING)
+  priority        TaskPriority @default(NORMAL)
+
+  projectId       String?
+  vendorId        String?      // sourcing vendor - where the raw/blank product was bought
+  quotedPrice     Float?
+
+  // Branding stage - filled in once the item moves past PURCHASED
+  brandingVendorId String?     // branding partner (printer/embroiderer/engraver)
+  brandingMethod   String?     // e.g. Screen Print, Embroidery, Heat Transfer, Engraving, Sublimation
+  brandingCost     Float?
+  artworkUrl       String?     // client logo / design file used for branding
+
+  assignedToId    String?
+  createdById     String
+
+  lastActivityAt  DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  material       Material  @relation(fields: [materialId], references: [id])
+  project        Project?  @relation(fields: [projectId], references: [id])
+  vendor         Vendor?   @relation("SourcingVendor", fields: [vendorId], references: [id])
+  brandingVendor Vendor?   @relation("BrandingVendor", fields: [brandingVendorId], references: [id])
+  assignedTo     User?     @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdBy      User      @relation("CreatedBy", fields: [createdById], references: [id])
+
+  photos       TaskPhoto[]
+  events       TaskEvent[]
+  comments     TaskComment[]
+  distributions DistributionRecord[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([organizationId])
+}
+
+enum PhotoKind {
+  SAMPLE          // sample/mockup collected while sourcing
+  ARTWORK         // client logo/design file for branding
+  BRANDED_PROOF   // photo of the finished branded item
+  DELIVERY_PROOF  // proof of delivery to the recipient
+}
+
+model TaskPhoto {
+  id         String    @id @default(cuid())
+  taskId     String
+  url        String
+  kind       PhotoKind @default(SAMPLE)
+  caption    String?
+  createdAt  DateTime  @default(now())
+
+  task SourcingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+// Full audit trail: assignment, reassignment, status changes, etc.
+enum TaskEventType {
+  CREATED
+  ASSIGNED
+  REASSIGNED
+  STATUS_CHANGED
+  PHOTO_ADDED
+  VENDOR_LINKED
+  BRANDING_VENDOR_LINKED
+  ARTWORK_UPLOADED
+  DISTRIBUTION_RECORDED
+  COMMENT_ADDED
+}
+
+model TaskEvent {
+  id         String        @id @default(cuid())
+  taskId     String
+  actorId    String
+  type       TaskEventType
+  fromValue  String?       // e.g. previous status or previous assignee name
+  toValue    String?       // e.g. new status or new assignee name
+  note       String?
+  createdAt  DateTime      @default(now())
+
+  task  SourcingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor User         @relation(fields: [actorId], references: [id])
+
+  @@index([taskId])
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  authorId  String
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  task   SourcingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User         @relation(fields: [authorId], references: [id])
+}
+
+// ----------------------
+// Distribution
+// ----------------------
+// A tender is often fulfilled to more than one recipient (branches, offices,
+// individuals on a beneficiary list) - so distribution is tracked as its own
+// record per hand-over, not just a single "delivered" checkbox on the task.
+// Multiple records can exist against one task until the full quantity is out.
+
+model DistributionRecord {
+  id              String   @id @default(cuid())
+  taskId          String
+  organizationId  String
+  recipientName   String
+  recipientContact String?
+  quantity        Float
+  deliveryDate    DateTime @default(now())
+  deliveredById   String
+  proofPhotoUrl   String?
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  task        SourcingTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  deliveredBy User         @relation(fields: [deliveredById], references: [id])
+
+  @@index([taskId])
+  @@index([organizationId])
+}
+
+// ----------------------
+// Leads (from the public Touchline Branding / Signage website)
+// ----------------------
+// This table is created and written to by the separate public-site codebase
+// (touchline-platform) via db/leads.sql - it lives in the SAME Supabase
+// project as this app on purpose, so a public enquiry can be reviewed and
+// turned into a SourcingTask without switching systems. Prisma only reads
+// and updates rows here (status changes, linking a converted task); it
+// never creates new leads - that only happens from the public site's
+// server-side insert, which is what stamps organization_id.
+model Lead {
+  id              String    @id @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  organizationId  String    @map("organization_id")
+  brand           String    // 'branding' | 'signage' - matches the public site's check constraint
+  fullName        String    @map("full_name")
+  phone           String
+  email           String?
+  service         String?
+  preferredDate   DateTime? @map("preferred_date") @db.Date
+  location        String?
+  message         String?
+  status          String    @default("new") // 'new' | 'contacted' | 'converted' | 'closed'
+  convertedTaskId String?   @map("converted_task_id")
+
+  @@map("leads")
+  @@index([organizationId])
+  @@index([status])
+}
