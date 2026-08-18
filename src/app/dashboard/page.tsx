@@ -1,11 +1,11 @@
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { formatDistanceToNow } from "date-fns";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 
 const STALL_HOURS = 48;
 
@@ -29,33 +29,27 @@ export default async function DashboardPage() {
   const isEmployee = user.role === Role.EMPLOYEE;
   const organizationId = user.organizationId as string;
 
-  const [materials, openTasks, recentEvents, newLeadsCount] = await Promise.all([
-    prisma.material.findMany({ where: { organizationId } }),
-    prisma.sourcingTask.findMany({
-      where: {
-        organizationId,
-        status: { notIn: ["DISTRIBUTED", "UNAVAILABLE"] },
-        assignedToId: isEmployee ? user.id : undefined,
-      },
-      include: { material: true, assignedTo: { select: { name: true } } },
-      orderBy: isEmployee ? [{ priority: "desc" }, { lastActivityAt: "asc" }] : { lastActivityAt: "asc" },
-    }),
-    isEmployee
-      ? Promise.resolve([])
-      : prisma.taskEvent.findMany({
-          take: 10,
-          where: { task: { organizationId } },
-          orderBy: { createdAt: "desc" },
-          include: { actor: { select: { name: true } }, task: { select: { id: true, title: true } } },
-        }),
-    isEmployee ? Promise.resolve(0) : prisma.lead.count({ where: { organizationId, status: "new" } }),
-  ]);
+  const materialsP = supabaseAdmin.from('materials').select('*').eq('organizationId', organizationId);
+  let tasksQ = supabaseAdmin.from('sourcing_tasks').select('*').eq('organizationId', organizationId).not('status', 'in', '(DISTRIBUTED,UNAVAILABLE)');
+  if (isEmployee) tasksQ = tasksQ.eq('assignedToId', user.id).order('priority', { ascending: false }).order('lastActivityAt', { ascending: true });
+  else tasksQ = tasksQ.order('lastActivityAt', { ascending: true });
+  const tasksP = tasksQ;
+  const eventsP = isEmployee
+    ? Promise.resolve({ data: [] })
+    : supabaseAdmin.from('task_events').select('*, actor:users(id,name), task:sourcing_tasks(id,title)').order('createdAt', { ascending: false }).limit(10);
+  const leadsP = isEmployee ? Promise.resolve({ count: 0 }) : supabaseAdmin.from('leads').select('id', { count: 'exact', head: true }).eq('organizationId', organizationId).eq('status', 'new');
 
-  const lowStock = materials.filter((m) => m.stockOnHand <= m.reorderThreshold);
+  const [{ data: materials }, { data: openTasks }, eventsRes, leadsRes] = await Promise.all([materialsP, tasksP, eventsP, leadsP]);
+  const recentEvents = (eventsRes as any).data ?? [];
+  const newLeadsCount = (leadsRes as any).count ?? 0;
+
+  const materialsList = materials ?? [];
+  const openTasksList = openTasks ?? [];
+  const lowStock = materialsList.filter((m) => m.stockOnHand <= m.reorderThreshold);
   const stallCutoff = new Date(Date.now() - STALL_HOURS * 60 * 60 * 1000);
-  const stalledTasks = openTasks.filter((t) => t.lastActivityAt < stallCutoff);
+  const stalledTasks = openTasksList.filter((t) => t.lastActivityAt < stallCutoff);
 
-  const statusCounts = openTasks.reduce<Record<string, number>>((acc, t) => {
+  const statusCounts = openTasksList.reduce<Record<string, number>>((acc, t) => {
     acc[t.status] = (acc[t.status] || 0) + 1;
     return acc;
   }, {});
@@ -66,13 +60,13 @@ export default async function DashboardPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold text-brand-navy">My Tasks</h1>
 
-        {openTasks.length === 0 ? (
+        {openTasksList.length === 0 ? (
           <div className="card text-sm text-gray-500 animate-fade-in-up">
             Nothing assigned to you right now. Check back later, or ask your manager.
           </div>
         ) : (
           <ul className="space-y-2 animate-fade-in-up">
-            {openTasks.map((t) => (
+            {openTasksList.map((t) => (
               <li key={t.id} className="card">
                 <Link href={`/tasks/${t.id}`} className="flex justify-between items-start gap-3">
                   <div>
@@ -109,7 +103,7 @@ export default async function DashboardPage() {
               <div className="mt-1"><StatusBadge status={status} /></div>
             </div>
           ))}
-        {openTasks.length === 0 && (
+          {openTasksList.length === 0 && (
           <div className="col-span-full text-sm text-gray-500">No open sourcing tasks right now.</div>
         )}
       </div>
@@ -183,7 +177,7 @@ export default async function DashboardPage() {
           <p className="text-sm text-gray-500">No activity yet.</p>
         ) : (
           <ul className="space-y-2">
-            {recentEvents.map((e) => (
+            {recentEvents.map((e: any) => (
               <li key={e.id} className="text-sm text-gray-600">
                 <span className="font-medium text-gray-800">{e.actor.name}</span>{" "}
                 {e.type.replace("_", " ").toLowerCase()} on{" "}

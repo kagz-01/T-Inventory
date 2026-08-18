@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 
 export async function GET(req: NextRequest) {
   const user = await requireOrgUser();
@@ -13,13 +13,8 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || undefined; // new | contacted | converted | closed
 
-  const leads = await prisma.lead.findMany({
-    where: {
-      organizationId: user.organizationId,
-      status: status || undefined,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json(leads);
+  let query = supabaseAdmin.from('leads').select('*').eq('organization_id', user.organizationId).order('created_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  const { data: leads } = await query;
+  return NextResponse.json(leads ?? []);
 }

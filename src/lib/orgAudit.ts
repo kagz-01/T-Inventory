@@ -1,24 +1,23 @@
-import { prisma } from "@/lib/prisma";
-import { OrgAuditEventType } from "@prisma/client";
+import { supabaseAdmin } from "@/lib/supabase";
+import { OrgAuditEventType } from "@/types/dbEnums";
 
 export async function logOrgEvent(params: {
   organizationId: string;
   actorId?: string | null;
-  type: OrgAuditEventType;
+  type: OrgAuditEventType | string;
   targetEmail?: string | null;
   fromValue?: string | null;
   toValue?: string | null;
   note?: string | null;
 }) {
-  await prisma.orgAuditLog.create({
-    data: {
-      organizationId: params.organizationId,
-      actorId: params.actorId ?? null,
-      type: params.type,
-      targetEmail: params.targetEmail ?? null,
-      fromValue: params.fromValue ?? null,
-      toValue: params.toValue ?? null,
-      note: params.note ?? null,
-    },
+  await supabaseAdmin.from('org_audit_logs').insert({
+    id: undefined, // Placeholder for ID
+    organizationId: params.organizationId,
+    actorId: params.actorId ?? null,
+    type: params.type,
+    targetEmail: params.targetEmail ?? null,
+    fromValue: params.fromValue ?? null,
+    toValue: params.toValue ?? null,
+    note: params.note ?? null,
   });
 }

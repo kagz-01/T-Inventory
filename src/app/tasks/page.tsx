@@ -50,45 +50,41 @@ export default function TasksPage() {
       {loading ? (
         <p className="text-sm text-gray-500">Loading tasks…</p>
       ) : (
-        <Enter>{entered && (
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {COLUMNS.map((status) => {
-              const items = tasks.filter((t) => t.status === status);
-              return (
-                <Enter key={status} className="animate-slide-in" style="animation-delay: 0.1s;">
-                  <div className="min-w-[260px] flex-shrink-0">
-                    <div className="mb-2">
-                      <StatusBadge status={status} /> <span className="text-xs text-gray-400">({items.length})</span>
-                    </div>
-                    <div className="space-y-2">
-                      {items.map((t) => (
-                        <Link
-                          key={t.id}
-                          href={`/tasks/${t.id}`}
-                          className="card block hover:shadow-md transition-shadow"
-                        >
-                          <div className="font-medium text-sm text-gray-800">{t.title}</div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {t.material?.name} · {t.quantityNeeded} {t.material?.unit}
-                          </div>
-                          <div className="text-xs text-gray-400 mt-2 flex items-center justify-between">
-                            <span>{t.assignedTo?.name || "Unassigned"}</span>
-                            {t.priority !== "NORMAL" && (
-                              <span className="text-amber-600 font-medium">{t.priority}</span>
-                            )}
-                          </div>
-                        </Link>
-                      ))}
-                      {items.length === 0 && (
-                        <div className="text-xs text-gray-300 italic px-1">No tasks</div>
-                      )}
-                    </div>
-                  </div>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {COLUMNS.map((status) => {
+            const items = tasks.filter((t) => t.status === status);
+            return (
+              <div key={status} className="min-w-[260px] flex-shrink-0 animate-fade-in-up">
+                <div className="mb-2">
+                  <StatusBadge status={status} /> <span className="text-xs text-gray-400">({items.length})</span>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <div className="space-y-2">
+                  {items.map((t) => (
+                    <Link
+                      key={t.id}
+                      href={`/tasks/${t.id}`}
+                      className="card block hover:shadow-md transition-shadow"
+                    >
+                      <div className="font-medium text-sm text-gray-800">{t.title}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {t.material?.name} · {t.quantityNeeded} {t.material?.unit}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-2 flex items-center justify-between">
+                        <span>{t.assignedTo?.name || "Unassigned"}</span>
+                        {t.priority !== "NORMAL" && (
+                          <span className="text-amber-600 font-medium">{t.priority}</span>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                  {items.length === 0 && (
+                    <div className="text-xs text-gray-300 italic px-1">No tasks</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {showNew && (

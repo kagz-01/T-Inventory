@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canManageCatalogue } from "@/lib/permissions";
 import { materialSchema } from "@/lib/validation";
 
@@ -12,22 +12,27 @@ export async function GET(req: NextRequest) {
   const lowStock = searchParams.get("lowStock") === "true";
   const search = searchParams.get("search") || undefined;
 
-  const materials = await prisma.material.findMany({
-    where: {
-      organizationId: user.organizationId,
-      category: category || undefined,
-      name: search ? { contains: search, mode: "insensitive" } : undefined,
-    },
-    include: {
-      photos: { take: 3 },
-      vendorLinks: { include: { vendor: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  // Basic material list — includes photos and vendor links fetched separately per material
+  let query = supabaseAdmin.from('materials').select('*').eq('organizationId', user.organizationId).order('name', { ascending: true });
+  if (category) query = query.eq('category', category);
+  if (search) query = query.ilike('name', `%${search}%`);
+  const { data: materials } = await query;
+  const list = materials ?? [];
+  for (const m of list) {
+    const { data: photos } = await supabaseAdmin.from('material_photos').select('*').eq('materialId', m.id).order('createdAt', { ascending: false }).limit(3);
+    (m as any).photos = photos ?? [];
+    const { data: links } = await supabaseAdmin.from('vendor_materials').select('*').eq('materialId', m.id);
+    // attach vendor info for each link
+    for (const l of links ?? []) {
+      const { data: v } = await supabaseAdmin.from('vendors').select('id,name').eq('id', l.vendorId).maybeSingle();
+      (l as any).vendor = v ?? null;
+    }
+    (m as any).vendorLinks = links ?? [];
+  }
 
   const filtered = lowStock
-    ? materials.filter((m) => m.stockOnHand <= m.reorderThreshold)
-    : materials;
+    ? list.filter((m) => m.stockOnHand <= m.reorderThreshold)
+    : list;
 
   return NextResponse.json(filtered);
 }
@@ -45,8 +50,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const material = await prisma.material.create({
-    data: { ...parsed.data, organizationId: user.organizationId },
-  });
+  const { data: material } = await supabaseAdmin.from('materials').insert({ ...parsed.data, organizationId: user.organizationId }).select().maybeSingle();
   return NextResponse.json(material, { status: 201 });
 }

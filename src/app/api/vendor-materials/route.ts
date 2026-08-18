@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canManageCatalogue } from "@/lib/permissions";
 import { vendorMaterialSchema } from "@/lib/validation";
 
@@ -20,32 +20,19 @@ export async function POST(req: NextRequest) {
 
   // Both sides of the link must belong to the caller's org, or a stray id could
   // be used to leak/mutate price data across organizations.
-  const [vendor, material] = await Promise.all([
-    prisma.vendor.findUnique({ where: { id: parsed.data.vendorId } }),
-    prisma.material.findUnique({ where: { id: parsed.data.materialId } }),
+  const [vendorRes, materialRes] = await Promise.all([
+    supabaseAdmin.from('vendors').select('*').eq('id', parsed.data.vendorId).maybeSingle(),
+    supabaseAdmin.from('materials').select('*').eq('id', parsed.data.materialId).maybeSingle(),
   ]);
-  if (!vendor || vendor.organizationId !== user.organizationId) {
-    return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
-  }
-  if (!material || material.organizationId !== user.organizationId) {
-    return NextResponse.json({ error: "Material not found" }, { status: 404 });
-  }
+  const vendor = vendorRes.data;
+  const material = materialRes.data;
+  if (!vendor || vendor.organizationId !== user.organizationId) return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
+  if (!material || material.organizationId !== user.organizationId) return NextResponse.json({ error: "Material not found" }, { status: 404 });
 
-  const link = await prisma.vendorMaterial.upsert({
-    where: {
-      vendorId_materialId: {
-        vendorId: parsed.data.vendorId,
-        materialId: parsed.data.materialId,
-      },
-    },
-    update: {
-      price: parsed.data.price,
-      currency: parsed.data.currency,
-      quantityAvail: parsed.data.quantityAvail,
-      lastCheckedAt: new Date(),
-    },
-    create: parsed.data,
-  });
+  const { data: link } = await supabaseAdmin.from('vendor_materials').upsert({
+    ...parsed.data,
+    lastCheckedAt: new Date(),
+  }, { onConflict: 'vendorId,materialId' }).select().maybeSingle();
 
   return NextResponse.json(link, { status: 201 });
 }
@@ -61,16 +48,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "materialId query param required" }, { status: 400 });
   }
 
-  const material = await prisma.material.findUnique({ where: { id: materialId } });
-  if (!material || material.organizationId !== user.organizationId) {
-    return NextResponse.json({ error: "Material not found" }, { status: 404 });
+  const { data: material } = await supabaseAdmin.from('materials').select('*').eq('id', materialId).maybeSingle();
+  if (!material || material.organizationId !== user.organizationId) return NextResponse.json({ error: "Material not found" }, { status: 404 });
+
+  const { data: links } = await supabaseAdmin.from('vendor_materials').select('*').eq('materialId', materialId).order('price', { ascending: true });
+  for (const l of links ?? []) {
+    const { data: v } = await supabaseAdmin.from('vendors').select('id,name').eq('id', l.vendorId).maybeSingle();
+    (l as any).vendor = v ?? null;
   }
 
-  const links = await prisma.vendorMaterial.findMany({
-    where: { materialId },
-    include: { vendor: true },
-    orderBy: { price: "asc" },
-  });
-
-  return NextResponse.json(links);
+  return NextResponse.json(links ?? []);
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canManageCatalogue } from "@/lib/permissions";
 import { vendorSchema } from "@/lib/validation";
 
@@ -11,19 +11,22 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get("search") || undefined;
   const type = searchParams.get("type") || undefined; // SOURCING | BRANDING | BOTH
 
-  const vendors = await prisma.vendor.findMany({
-    where: {
-      organizationId: user.organizationId,
-      name: search ? { contains: search, mode: "insensitive" } : undefined,
-      type: type ? (type as any) : undefined,
-    },
-    include: {
-      materialLinks: { include: { material: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  let q: any = supabaseAdmin.from('vendors').select('*').eq('organizationId', user.organizationId);
+  if (search) q = q.ilike('name', `%${search}%`);
+  if (type) q = q.eq('type', type);
+  q = q.order('name', { ascending: true });
+  const { data: vendors } = await q;
+  const result = vendors ?? [];
+  for (const v of result) {
+    const { data: links } = await supabaseAdmin.from('vendor_materials').select('*').eq('vendorId', v.id);
+    for (const l of links ?? []) {
+      const { data: m } = await supabaseAdmin.from('materials').select('id,name,unit').eq('id', l.materialId).maybeSingle();
+      (l as any).material = m ?? null;
+    }
+    (v as any).materialLinks = links ?? [];
+  }
 
-  return NextResponse.json(vendors);
+  return NextResponse.json(result);
 }
 
 export async function POST(req: NextRequest) {
@@ -39,8 +42,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const vendor = await prisma.vendor.create({
-    data: { ...parsed.data, organizationId: user.organizationId },
-  });
+  const { data: vendor } = await supabaseAdmin.from('vendors').insert({ ...parsed.data, organizationId: user.organizationId }).select().maybeSingle();
   return NextResponse.json(vendor, { status: 201 });
 }

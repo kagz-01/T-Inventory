@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canManageTeam, canInviteRole } from "@/lib/permissions";
 import { inviteCreateSchema } from "@/lib/validation";
 import { logOrgEvent } from "@/lib/orgAudit";
@@ -15,13 +15,16 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const invites = await prisma.invite.findMany({
-    where: { organizationId: user.organizationId, status: { not: "ACCEPTED" } },
-    include: { invitedBy: { select: { id: true, name: true, email: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json(invites);
+  const { data: invites } = await supabaseAdmin.from('invites').select('*').eq('organizationId', user.organizationId).neq('status', 'ACCEPTED').order('createdAt', { ascending: false });
+  const list = invites ?? [];
+  // Attach inviter info where available
+  for (const inv of list) {
+    if (inv.invitedById) {
+      const { data: inviter } = await supabaseAdmin.from('users').select('id,name,email').eq('id', inv.invitedById).maybeSingle();
+      (inv as any).invitedBy = inviter ?? null;
+    }
+  }
+  return NextResponse.json(list);
 }
 
 export async function POST(req: NextRequest) {
@@ -46,16 +49,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const existingMember = await prisma.user.findFirst({
-    where: { email, organizationId: user.organizationId },
-  });
+  const { data: existingMember } = await supabaseAdmin.from('users').select('*').eq('email', email).eq('organizationId', user.organizationId).maybeSingle();
   if (existingMember) {
     return NextResponse.json({ error: "That email is already a member of your team." }, { status: 409 });
   }
-
-  const existingPending = await prisma.invite.findFirst({
-    where: { email, organizationId: user.organizationId, status: "PENDING" },
-  });
+  const { data: existingPending } = await supabaseAdmin.from('invites').select('*').eq('email', email).eq('organizationId', user.organizationId).eq('status', 'PENDING').maybeSingle();
   if (existingPending) {
     return NextResponse.json(
       { error: "There's already a pending invite for that email. Resend it instead." },
@@ -63,15 +61,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const invite = await prisma.invite.create({
-    data: {
-      email,
-      role: parsed.data.role,
-      organizationId: user.organizationId,
-      invitedById: user.id,
-      expiresAt: new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
-    },
-  });
+  const { data: invite } = await supabaseAdmin.from('invites').insert({
+    email,
+    role: parsed.data.role,
+    organizationId: user.organizationId,
+    invitedById: user.id,
+    expiresAt: new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+  }).select().maybeSingle();
 
   await logOrgEvent({
     organizationId: user.organizationId,

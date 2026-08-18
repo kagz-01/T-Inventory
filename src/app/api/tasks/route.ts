@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { taskSchema } from "@/lib/validation";
 import { logTaskEvent } from "@/lib/taskEvents";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 
 export async function GET(req: NextRequest) {
   const user = await requireOrgUser();
@@ -15,28 +15,43 @@ export async function GET(req: NextRequest) {
   const projectId = searchParams.get("projectId") || undefined;
   const mine = searchParams.get("mine") === "true";
 
-  const tasks = await prisma.sourcingTask.findMany({
-    where: {
-      organizationId: user.organizationId,
-      status: status ? (status as any) : undefined,
-      projectId: projectId || undefined,
-      // Field employees only ever see their own tasks unless explicitly browsing all as Manager/Admin.
-      assignedToId:
-        mine || user.role === Role.EMPLOYEE ? user.id : assignedToId || undefined,
-    },
-    include: {
-      material: true,
-      vendor: true,
-      assignedTo: { select: { id: true, name: true, image: true } },
-      createdBy: { select: { id: true, name: true } },
-      project: true,
-      photos: { take: 1 },
-      _count: { select: { events: true, comments: true } },
-    },
-    orderBy: [{ priority: "desc" }, { lastActivityAt: "desc" }],
-  });
+  let query = supabaseAdmin.from('sourcing_tasks').select('*').eq('organizationId', user.organizationId);
+  if (status) query = query.eq('status', status);
+  if (projectId) query = query.eq('projectId', projectId);
+  if (mine || user.role === Role.EMPLOYEE) query = query.eq('assignedToId', user.id);
+  else if (assignedToId) query = query.eq('assignedToId', assignedToId);
+  const { data: tasks } = await query.order('priority', { ascending: false }).order('lastActivityAt', { ascending: false });
+  const list = tasks ?? [];
+  // Enrich tasks with related data
+  for (const t of list) {
+    if (t.materialId) {
+      const { data: m } = await supabaseAdmin.from('materials').select('id,name,unit').eq('id', t.materialId).maybeSingle();
+      (t as any).material = m ?? null;
+    }
+    if (t.vendorId) {
+      const { data: v } = await supabaseAdmin.from('vendors').select('id,name').eq('id', t.vendorId).maybeSingle();
+      (t as any).vendor = v ?? null;
+    }
+    if (t.assignedToId) {
+      const { data: a } = await supabaseAdmin.from('users').select('id,name,image').eq('id', t.assignedToId).maybeSingle();
+      (t as any).assignedTo = a ?? null;
+    }
+    if (t.createdById) {
+      const { data: c } = await supabaseAdmin.from('users').select('id,name').eq('id', t.createdById).maybeSingle();
+      (t as any).createdBy = c ?? null;
+    }
+    if (t.projectId) {
+      const { data: p } = await supabaseAdmin.from('projects').select('id,name').eq('id', t.projectId).maybeSingle();
+      (t as any).project = p ?? null;
+    }
+    const { data: photos } = await supabaseAdmin.from('task_photos').select('*').eq('taskId', t.id).order('createdAt', { ascending: false }).limit(1);
+    (t as any).photos = photos ?? [];
+    const { count: eventsCount } = await supabaseAdmin.from('task_events').select('id', { count: 'exact', head: true }).eq('taskId', t.id);
+    const { count: commentsCount } = await supabaseAdmin.from('task_comments').select('id', { count: 'exact', head: true }).eq('taskId', t.id);
+    (t as any)._count = { events: eventsCount ?? 0, comments: commentsCount ?? 0 };
+  }
 
-  return NextResponse.json(tasks);
+  return NextResponse.json(list);
 }
 
 export async function POST(req: NextRequest) {
@@ -50,47 +65,31 @@ export async function POST(req: NextRequest) {
   }
 
   // material, project, and assignee (if given) must all belong to the caller's org.
-  const material = await prisma.material.findUnique({ where: { id: parsed.data.materialId } });
+  const { data: material } = await supabaseAdmin.from('materials').select('*').eq('id', parsed.data.materialId).maybeSingle();
   if (!material || material.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Material not found" }, { status: 404 });
   }
   if (parsed.data.projectId) {
-    const project = await prisma.project.findUnique({ where: { id: parsed.data.projectId } });
+    const { data: project } = await supabaseAdmin.from('projects').select('*').eq('id', parsed.data.projectId).maybeSingle();
     if (!project || project.organizationId !== user.organizationId) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
   }
   if (parsed.data.assignedToId) {
-    const assignee = await prisma.user.findUnique({ where: { id: parsed.data.assignedToId } });
+    const { data: assignee } = await supabaseAdmin.from('users').select('*').eq('id', parsed.data.assignedToId).maybeSingle();
     if (!assignee || assignee.organizationId !== user.organizationId) {
       return NextResponse.json({ error: "Assignee not found" }, { status: 404 });
     }
   }
+  const { data: task } = await supabaseAdmin.from('sourcing_tasks').insert({
+    ...parsed.data,
+    organizationId: user.organizationId,
+    status: parsed.data.assignedToId ? 'ASSIGNED' : 'PENDING',
+    createdById: user.id,
+  }).select().maybeSingle();
 
-  const task = await prisma.sourcingTask.create({
-    data: {
-      ...parsed.data,
-      organizationId: user.organizationId,
-      status: parsed.data.assignedToId ? "ASSIGNED" : "PENDING",
-      createdById: user.id,
-    },
-  });
-
-  await logTaskEvent({
-    taskId: task.id,
-    actorId: user.id,
-    type: "CREATED",
-    note: parsed.data.assignedToId ? "Task created and assigned" : "Task created",
-  });
-
-  if (parsed.data.assignedToId) {
-    await logTaskEvent({
-      taskId: task.id,
-      actorId: user.id,
-      type: "ASSIGNED",
-      toValue: parsed.data.assignedToId,
-    });
-  }
+  await logTaskEvent({ taskId: task.id, actorId: user.id, type: 'CREATED', note: parsed.data.assignedToId ? 'Task created and assigned' : 'Task created' });
+  if (parsed.data.assignedToId) await logTaskEvent({ taskId: task.id, actorId: user.id, type: 'ASSIGNED', toValue: parsed.data.assignedToId });
 
   return NextResponse.json(task, { status: 201 });
 }

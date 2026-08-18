@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
@@ -29,32 +29,32 @@ export async function requireOrgUser(): Promise<
   return user as CurrentUser & { organizationId: string };
 }
 
-export function canManageCatalogue(role: Role) {
+export function canManageCatalogue(role: Role | string) {
   return role === Role.ADMIN || role === Role.MANAGER;
 }
 
-export function canApprovePurchase(role: Role) {
+export function canApprovePurchase(role: Role | string) {
   return role === Role.ADMIN || role === Role.MANAGER;
 }
 
-export function canReassignTask(role: Role) {
+export function canReassignTask(role: Role | string) {
   // Admin/Manager can reassign anyone's task. Employees can only hand off their own
   // (checked separately against task.assignedToId in the route handler).
   return role === Role.ADMIN || role === Role.MANAGER || role === Role.EMPLOYEE;
 }
 
-export function canManageTeam(role: Role) {
+export function canManageTeam(role: Role | string) {
   // Send/revoke invites, view member list. Role changes are Admin-only (see isAdmin).
   return role === Role.ADMIN || role === Role.MANAGER;
 }
 
-export function canInviteRole(inviterRole: Role, targetRole: Role) {
+export function canInviteRole(inviterRole: Role | string, targetRole: Role | string) {
   // Managers can only invite Employees. Only Admin can invite a Manager or another Admin.
   if (inviterRole === Role.ADMIN) return true;
   if (inviterRole === Role.MANAGER) return targetRole === Role.EMPLOYEE;
   return false;
 }
 
-export function isAdmin(role: Role) {
+export function isAdmin(role: Role | string) {
   return role === Role.ADMIN;
 }

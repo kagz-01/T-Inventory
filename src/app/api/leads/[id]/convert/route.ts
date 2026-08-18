@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { logTaskEvent } from "@/lib/taskEvents";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 import { z } from "zod";
 
 const convertSchema = z.object({
@@ -26,8 +26,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const lead = await prisma.lead.findUnique({ where: { id: params.id } });
-  if (!lead || lead.organizationId !== user.organizationId) {
+  const { data: lead } = await supabaseAdmin.from('leads').select('*').eq('id', params.id).maybeSingle();
+  if (!lead || lead.organization_id !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (lead.status === "converted") {
@@ -40,12 +40,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const material = await prisma.material.findUnique({ where: { id: parsed.data.materialId } });
+  const { data: material } = await supabaseAdmin.from('materials').select('*').eq('id', parsed.data.materialId).maybeSingle();
   if (!material || material.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Invalid material" }, { status: 400 });
   }
   if (parsed.data.assignedToId) {
-    const assignee = await prisma.user.findUnique({ where: { id: parsed.data.assignedToId } });
+    const { data: assignee } = await supabaseAdmin.from('users').select('*').eq('id', parsed.data.assignedToId).maybeSingle();
     if (!assignee || assignee.organizationId !== user.organizationId) {
       return NextResponse.json({ error: "Invalid assignee" }, { status: 400 });
     }
@@ -55,19 +55,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     parsed.data.title ||
     `${lead.service || "Enquiry"} for ${lead.fullName} (${lead.brand})`;
 
-  const task = await prisma.sourcingTask.create({
-    data: {
-      organizationId: user.organizationId,
-      title,
-      materialId: parsed.data.materialId,
-      quantityNeeded: parsed.data.quantityNeeded,
-      priority: parsed.data.priority,
-      projectId: parsed.data.projectId,
-      assignedToId: parsed.data.assignedToId,
-      status: parsed.data.assignedToId ? "ASSIGNED" : "PENDING",
-      createdById: user.id,
-    },
-  });
+  const { data: task } = await supabaseAdmin.from('sourcing_tasks').insert({
+    organizationId: user.organizationId,
+    title,
+    materialId: parsed.data.materialId,
+    quantityNeeded: parsed.data.quantityNeeded,
+    priority: parsed.data.priority,
+    projectId: parsed.data.projectId,
+    assignedToId: parsed.data.assignedToId,
+    status: parsed.data.assignedToId ? 'ASSIGNED' : 'PENDING',
+    createdById: user.id,
+  }).select().maybeSingle();
 
   const contactNote = [
     `Converted from a website enquiry (${lead.brand}).`,
@@ -84,14 +82,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await logTaskEvent({ taskId: task.id, actorId: user.id, type: "ASSIGNED", toValue: parsed.data.assignedToId });
   }
 
-  await prisma.taskComment.create({
-    data: { taskId: task.id, authorId: user.id, body: contactNote },
-  });
+  await supabaseAdmin.from('task_comments').insert({ taskId: task.id, authorId: user.id, body: contactNote });
 
-  await prisma.lead.update({
-    where: { id: lead.id },
-    data: { status: "converted", convertedTaskId: task.id },
-  });
+  await supabaseAdmin.from('leads').update({ status: 'converted', converted_task_id: task.id }).eq('id', lead.id);
 
   return NextResponse.json(task, { status: 201 });
 }

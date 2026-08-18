@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canManageCatalogue } from "@/lib/permissions";
 import { materialSchema } from "@/lib/validation";
 
@@ -7,17 +7,17 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const user = await requireOrgUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const material = await prisma.material.findUnique({
-    where: { id: params.id },
-    include: {
-      photos: true,
-      vendorLinks: { include: { vendor: true }, orderBy: { price: "asc" } },
-    },
-  });
+  const { data: material } = await supabaseAdmin.from('materials').select('*').eq('id', params.id).maybeSingle();
   if (!material || material.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json(material);
+  const { data: photos } = await supabaseAdmin.from('material_photos').select('*').eq('materialId', material.id).order('createdAt', { ascending: false });
+  const { data: links } = await supabaseAdmin.from('vendor_materials').select('*').eq('materialId', material.id).order('price', { ascending: true });
+  for (const l of links ?? []) {
+    const { data: v } = await supabaseAdmin.from('vendors').select('id,name').eq('id', l.vendorId).maybeSingle();
+    (l as any).vendor = v ?? null;
+  }
+  return NextResponse.json({ ...material, photos: photos ?? [], vendorLinks: links ?? [] });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const existing = await prisma.material.findUnique({ where: { id: params.id } });
+  const { data: existing } = await supabaseAdmin.from('materials').select('*').eq('id', params.id).maybeSingle();
   if (!existing || existing.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -38,10 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const material = await prisma.material.update({
-    where: { id: params.id },
-    data: parsed.data,
-  });
+  const { data: material } = await supabaseAdmin.from('materials').update(parsed.data).eq('id', params.id).select().maybeSingle();
   return NextResponse.json(material);
 }
 
@@ -52,11 +49,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const existing = await prisma.material.findUnique({ where: { id: params.id } });
+  const { data: existing } = await supabaseAdmin.from('materials').select('*').eq('id', params.id).maybeSingle();
   if (!existing || existing.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-
-  await prisma.material.delete({ where: { id: params.id } });
+  await supabaseAdmin.from('materials').delete().eq('id', params.id);
   return NextResponse.json({ success: true });
 }

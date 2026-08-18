@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canManageTeam, canInviteRole } from "@/lib/permissions";
 import { logOrgEvent } from "@/lib/orgAudit";
 import { z } from "zod";
@@ -12,7 +12,7 @@ const patchSchema = z.object({
 });
 
 async function loadOrgScopedInvite(id: string, organizationId: string) {
-  const invite = await prisma.invite.findUnique({ where: { id } });
+  const { data: invite } = await supabaseAdmin.from('invites').select('*').eq('id', id).maybeSingle();
   if (!invite || invite.organizationId !== organizationId) return null;
   return invite;
 }
@@ -39,10 +39,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   if (parsed.data.action === "resend") {
-    const updated = await prisma.invite.update({
-      where: { id: invite.id },
-      data: { expiresAt: new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000) },
-    });
+    const { data: updated } = await supabaseAdmin.from('invites').update({ expiresAt: new Date(Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString() }).eq('id', invite.id).select().maybeSingle();
     await logOrgEvent({
       organizationId: user.organizationId,
       actorId: user.id,
@@ -62,10 +59,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       { status: 403 }
     );
   }
-  const updated = await prisma.invite.update({
-    where: { id: invite.id },
-    data: { role: parsed.data.role },
-  });
+  const { data: updated } = await supabaseAdmin.from('invites').update({ role: parsed.data.role }).eq('id', invite.id).select().maybeSingle();
   await logOrgEvent({
     organizationId: user.organizationId,
     actorId: user.id,
@@ -89,7 +83,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const invite = await loadOrgScopedInvite(params.id, user.organizationId);
   if (!invite) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  await prisma.invite.update({ where: { id: invite.id }, data: { status: "REVOKED" } });
+  await supabaseAdmin.from('invites').update({ status: 'REVOKED' }).eq('id', invite.id);
 
   await logOrgEvent({
     organizationId: user.organizationId,

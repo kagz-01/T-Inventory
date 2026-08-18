@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 
 // Manual "pre-create by email" has been replaced by the invite system
@@ -9,25 +9,17 @@ export async function GET() {
   const user = await requireOrgUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const employees = await prisma.user.findMany({
-    where: { organizationId: user.organizationId },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      phone: true,
-      role: true,
-      active: true,
-      tasksAssigned: {
-        where: {
-          status: { notIn: ["DISTRIBUTED", "UNAVAILABLE"] },
-        },
-        select: { id: true, title: true, status: true },
-      },
-    },
-  });
+  const { data: employees } = await supabaseAdmin.from('users').select('id,name,email,image,phone,role,active').eq('organizationId', user.organizationId).order('name', { ascending: true });
+  const list = employees ?? [];
+  // Attach open tasks per employee
+  for (const e of list) {
+    const { data: tasks } = await supabaseAdmin
+      .from('sourcing_tasks')
+      .select('id,title,status')
+      .eq('assignedToId', e.id)
+      .not('status', 'in', '(DISTRIBUTED,UNAVAILABLE)');
+    (e as any).tasksAssigned = tasks ?? [];
+  }
 
-  return NextResponse.json(employees);
+  return NextResponse.json(list);
 }

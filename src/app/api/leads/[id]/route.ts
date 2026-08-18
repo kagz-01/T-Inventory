@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 import { z } from "zod";
 
 const statusSchema = z.object({
@@ -15,8 +15,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const existing = await prisma.lead.findUnique({ where: { id: params.id } });
-  if (!existing || existing.organizationId !== user.organizationId) {
+  const { data: existing } = await supabaseAdmin.from('leads').select('*').eq('id', params.id).maybeSingle();
+  if (!existing || existing.organization_id !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -36,6 +36,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     );
   }
 
-  const lead = await prisma.lead.update({ where: { id: params.id }, data: { status: parsed.data.status } });
+  const { data: lead } = await supabaseAdmin.from('leads').update({ status: parsed.data.status }).eq('id', params.id).select().maybeSingle();
   return NextResponse.json(lead);
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { distributionSchema } from "@/lib/validation";
 import { logTaskEvent } from "@/lib/taskEvents";
@@ -18,33 +18,30 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const task = await prisma.sourcingTask.findUnique({
-    where: { id: params.id },
-    include: { distributions: true },
-  });
+  const { data: task } = await supabaseAdmin.from('sourcing_tasks').select('*').eq('id', params.id).maybeSingle();
+  const { data: distributions } = await supabaseAdmin.from('distribution_records').select('*').eq('taskId', params.id);
   if (!task || task.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const record = await prisma.distributionRecord.create({
-    data: {
-      taskId: task.id,
-      organizationId: user.organizationId,
-      recipientName: parsed.data.recipientName,
-      recipientContact: parsed.data.recipientContact,
-      quantity: parsed.data.quantity,
-      deliveryDate: parsed.data.deliveryDate ? new Date(parsed.data.deliveryDate) : new Date(),
-      proofPhotoUrl: parsed.data.proofPhotoUrl,
-      notes: parsed.data.notes,
-      deliveredById: user.id,
-    },
-  });
+  const { data: record } = await supabaseAdmin.from('distribution_records').insert({
+    taskId: task.id,
+    organizationId: user.organizationId,
+    recipientName: parsed.data.recipientName,
+    recipientContact: parsed.data.recipientContact,
+    quantity: parsed.data.quantity,
+    deliveryDate: parsed.data.deliveryDate ? new Date(parsed.data.deliveryDate) : new Date(),
+    proofPhotoUrl: parsed.data.proofPhotoUrl,
+    notes: parsed.data.notes,
+    deliveredById: user.id,
+  }).select().maybeSingle();
 
   // Branded goods leave inventory once handed over.
-  await prisma.material.update({
-    where: { id: task.materialId },
-    data: { stockOnHand: { decrement: parsed.data.quantity } },
-  });
+  if (task.materialId) {
+    const { data: mat } = await supabaseAdmin.from('materials').select('id,stockOnHand').eq('id', task.materialId).maybeSingle();
+    const newStock = (mat?.stockOnHand ?? 0) - parsed.data.quantity;
+    await supabaseAdmin.from('materials').update({ stockOnHand: newStock }).eq('id', task.materialId);
+  }
 
   await logTaskEvent({
     taskId: task.id,
@@ -55,19 +52,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   });
 
   // If cumulative distributed quantity now covers what was needed, close out the task.
-  const totalDistributed =
-    task.distributions.reduce((sum, d) => sum + d.quantity, 0) + parsed.data.quantity;
-
+  const totalDistributed = (distributions ?? []).reduce((sum, d) => sum + d.quantity, 0) + parsed.data.quantity;
   if (totalDistributed >= task.quantityNeeded && task.status !== "DISTRIBUTED") {
-    await prisma.sourcingTask.update({ where: { id: task.id }, data: { status: "DISTRIBUTED" } });
-    await logTaskEvent({
-      taskId: task.id,
-      actorId: user.id,
-      type: "STATUS_CHANGED",
-      fromValue: task.status,
-      toValue: "DISTRIBUTED",
-      note: "Fully distributed",
-    });
+    await supabaseAdmin.from('sourcing_tasks').update({ status: "DISTRIBUTED" }).eq('id', task.id);
+    await logTaskEvent({ taskId: task.id, actorId: user.id, type: "STATUS_CHANGED", fromValue: task.status, toValue: "DISTRIBUTED", note: "Fully distributed" });
   }
 
   return NextResponse.json(record, { status: 201 });

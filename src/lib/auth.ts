@@ -1,8 +1,8 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { type NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { supabaseAdmin } from "@/lib/supabase";
+import { Role } from "@/types/dbEnums";
+import { logOrgEvent } from "@/lib/orgAudit";
 
 // ----------------------------------------------------------------------------
 // Access model: this app is invite-only (no self-serve signup).
@@ -20,19 +20,20 @@ import { Role } from "@prisma/client";
 // ----------------------------------------------------------------------------
 
 async function isReturningUser(email: string) {
-  const existing = await prisma.user.findUnique({ where: { email } });
-  return existing;
+  const { data } = await supabaseAdmin.from('users').select('*').eq('email', email).maybeSingle();
+  return data;
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  // Using JWT sessions while migrating away from Prisma. Consider a proper
+  // Supabase adapter for NextAuth if you want server-stored sessions.
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
   ],
-  session: { strategy: "database" },
+  session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
     error: "/login",
@@ -58,18 +59,21 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Brand-new user — allowed only via org bootstrap or a pending invite.
-      const orgCount = await prisma.organization.count();
-      if (
-        orgCount === 0 &&
-        process.env.ADMIN_BOOTSTRAP_EMAIL &&
-        email === process.env.ADMIN_BOOTSTRAP_EMAIL.toLowerCase()
-      ) {
+      const orgCountRes = await supabaseAdmin.from('organizations').select('id', { head: true, count: 'exact' });
+      const orgCount = orgCountRes.count ?? 0;
+      if (orgCount === 0 && process.env.ADMIN_BOOTSTRAP_EMAIL && email === process.env.ADMIN_BOOTSTRAP_EMAIL.toLowerCase()) {
         return true;
       }
 
-      const invite = await prisma.invite.findFirst({
-        where: { email, status: "PENDING", expiresAt: { gt: new Date() } },
-      });
+      const { data: invite } = await supabaseAdmin
+        .from('invites')
+        .select('*')
+        .eq('email', email)
+        .eq('status', 'PENDING')
+        .gt('expiresAt', new Date().toISOString())
+        .order('createdAt', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (invite) return true;
 
       return "/login?error=AccessDenied";
@@ -80,61 +84,34 @@ export const authOptions: NextAuthOptions = {
       if (!user.email) return;
       const email = user.email.toLowerCase();
 
-      // Case 1: org bootstrap — this is the first-ever user and matches the
-      // bootstrap email. Create Organization #1 and make them Admin.
-      const orgCount = await prisma.organization.count();
-      if (
-        orgCount === 0 &&
-        process.env.ADMIN_BOOTSTRAP_EMAIL &&
-        email === process.env.ADMIN_BOOTSTRAP_EMAIL.toLowerCase()
-      ) {
-        const org = await prisma.organization.create({
-          data: { name: "My Organization", contactEmail: email },
-        });
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { role: Role.ADMIN, organizationId: org.id },
-        });
-        await prisma.orgAuditLog.create({
-          data: {
-            organizationId: org.id,
-            actorId: user.id,
-            type: "ORG_UPDATED",
-            note: "Organization created via admin bootstrap sign-in",
-          },
-        });
+      // Case 1: org bootstrap — create Organization #1 and make them Admin.
+      const orgCountRes = await supabaseAdmin.from('organizations').select('id', { head: true, count: 'exact' });
+      const orgCount = orgCountRes.count ?? 0;
+      if (orgCount === 0 && process.env.ADMIN_BOOTSTRAP_EMAIL && email === process.env.ADMIN_BOOTSTRAP_EMAIL.toLowerCase()) {
+        const { data: org } = await supabaseAdmin.from('organizations').insert({ name: 'My Organization', contactEmail: email }).select().maybeSingle();
+        if (org) {
+          await supabaseAdmin.from('users').update({ role: Role.ADMIN, organizationId: org.id }).eq('id', user.id);
+          await logOrgEvent({ organizationId: org.id, actorId: user.id, type: 'ORG_UPDATED', note: 'Organization created via admin bootstrap sign-in' });
+        }
         return;
       }
 
       // Case 2: consume a pending invite.
-      const invite = await prisma.invite.findFirst({
-        where: { email, status: "PENDING", expiresAt: { gt: new Date() } },
-        orderBy: { createdAt: "desc" },
-      });
+      const { data: invite } = await supabaseAdmin
+        .from('invites')
+        .select('*')
+        .eq('email', email)
+        .eq('status', 'PENDING')
+        .gt('expiresAt', new Date().toISOString())
+        .order('createdAt', { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (invite) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { role: invite.role, organizationId: invite.organizationId },
-        });
-        await prisma.invite.update({
-          where: { id: invite.id },
-          data: { status: "ACCEPTED", acceptedAt: new Date() },
-        });
-        await prisma.orgAuditLog.create({
-          data: {
-            organizationId: invite.organizationId,
-            actorId: user.id,
-            type: "INVITE_ACCEPTED",
-            targetEmail: email,
-            toValue: invite.role,
-          },
-        });
+        await supabaseAdmin.from('users').update({ role: invite.role, organizationId: invite.organizationId }).eq('id', user.id);
+        await supabaseAdmin.from('invites').update({ status: 'ACCEPTED', acceptedAt: new Date().toISOString() }).eq('id', invite.id);
+        await logOrgEvent({ organizationId: invite.organizationId, actorId: user.id, type: 'INVITE_ACCEPTED', targetEmail: email, toValue: invite.role });
         return;
       }
-
-      // Shouldn't be reachable — signIn callback should have denied this user
-      // before the adapter ever created a row. Leave organizationId null; every
-      // org-scoped route treats that as "no access" rather than throwing.
     },
   },
 };

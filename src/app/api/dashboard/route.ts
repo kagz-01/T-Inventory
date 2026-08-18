@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 
 const STALL_HOURS = 48; // task with no activity for this long gets flagged
 
@@ -10,35 +10,20 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const isEmployee = user.role === Role.EMPLOYEE;
+  // Basic Supabase queries — relational includes and advanced filters can
+  // be improved later using RPC/views or explicit joins.
+  const materialsRes = await supabaseAdmin.from('materials').select('*').eq('organizationId', user.organizationId);
+  const materials = materialsRes.data ?? [];
 
-  const [materials, openTasks, recentEvents, pendingInviteCount] = await Promise.all([
-    prisma.material.findMany({ where: { organizationId: user.organizationId } }),
-    prisma.sourcingTask.findMany({
-      where: {
-        organizationId: user.organizationId,
-        status: { notIn: ["DISTRIBUTED", "UNAVAILABLE"] },
-        // Employees only ever see their own open tasks on the dashboard —
-        // "My Tasks" front and center, not the whole org's board.
-        assignedToId: isEmployee ? user.id : undefined,
-      },
-      include: {
-        material: true,
-        assignedTo: { select: { id: true, name: true, image: true } },
-      },
-    }),
-    prisma.taskEvent.findMany({
-      take: 20,
-      where: { task: { organizationId: user.organizationId } },
-      orderBy: { createdAt: "desc" },
-      include: {
-        actor: { select: { id: true, name: true, image: true } },
-        task: { select: { id: true, title: true } },
-      },
-    }),
-    isEmployee
-      ? Promise.resolve(0)
-      : prisma.invite.count({ where: { organizationId: user.organizationId, status: "PENDING" } }),
-  ]);
+  let tasksQuery = supabaseAdmin.from('sourcing_tasks').select('*').eq('organizationId', user.organizationId).neq('status', 'DISTRIBUTED').neq('status', 'UNAVAILABLE');
+  if (isEmployee) tasksQuery = tasksQuery.eq('assignedToId', user.id);
+  const tasksRes = await tasksQuery;
+  const openTasks = tasksRes.data ?? [];
+
+  const eventsRes = await supabaseAdmin.from('task_events').select('*').order('createdAt', { ascending: false }).limit(20);
+  const recentEvents = eventsRes.data ?? [];
+
+  const pendingInviteCount = isEmployee ? 0 : (await supabaseAdmin.from('invites').select('id', { head: true, count: 'exact' }).eq('organizationId', user.organizationId).eq('status', 'PENDING')).count ?? 0;
 
   const lowStock = materials.filter((m) => m.stockOnHand <= m.reorderThreshold);
 

@@ -47,7 +47,7 @@ export default function MaterialsPage() {
       {loading ? (
         <p className="text-sm text-gray-500">Loading…</p>
       ) : (
-        <Enter fadeInUp>
+        <>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {materials.map((m) => {
@@ -74,7 +74,7 @@ export default function MaterialsPage() {
             {materials.length === 0 && <p className="text-sm text-gray-500">No materials yet.</p>}
           </div>
 
-        </Enter>
+        </>
       )}
 
       {showNew && (

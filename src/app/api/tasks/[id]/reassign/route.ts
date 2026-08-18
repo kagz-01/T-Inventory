@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser, canReassignTask } from "@/lib/permissions";
 import { reassignSchema } from "@/lib/validation";
 import { logTaskEvent } from "@/lib/taskEvents";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/dbEnums";
 
 // Hands a task off from its current assignee to a new employee, WITHOUT losing
 // any history: previous vendor visits, prices quoted, photos, and comments all
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const task = await prisma.sourcingTask.findUnique({ where: { id: params.id } });
+  const { data: task } = await supabaseAdmin.from('sourcing_tasks').select('*').eq('id', params.id).maybeSingle();
   if (!task || task.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -38,20 +38,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   // New assignee must belong to the same org.
-  const newAssignee = await prisma.user.findUnique({ where: { id: parsed.data.newAssigneeId } });
+  const { data: newAssignee } = await supabaseAdmin.from('users').select('*').eq('id', parsed.data.newAssigneeId).maybeSingle();
   if (!newAssignee || newAssignee.organizationId !== user.organizationId) {
     return NextResponse.json({ error: "New assignee not found" }, { status: 404 });
   }
 
   const previousAssigneeId = task.assignedToId;
 
-  const updated = await prisma.sourcingTask.update({
-    where: { id: params.id },
-    data: {
-      assignedToId: parsed.data.newAssigneeId,
-      status: "REASSIGNED",
-    },
-  });
+  const { data: updated } = await supabaseAdmin.from('sourcing_tasks').update({ assignedToId: parsed.data.newAssigneeId, status: "REASSIGNED" }).eq('id', params.id).select().maybeSingle();
 
   // Log as REASSIGNED (or ASSIGNED, if it had no prior assignee) so the timeline
   // clearly shows the handoff and who it went to.

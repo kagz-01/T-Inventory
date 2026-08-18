@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { z } from "zod";
 
@@ -13,21 +13,16 @@ export async function GET() {
   const user = await requireOrgUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const projects = await prisma.project.findMany({
-    where: { organizationId: user.organizationId },
-    include: {
-      tasks: { select: { id: true, status: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  const withProgress = projects.map((p) => ({
-    ...p,
-    totalTasks: p.tasks.length,
-    completedTasks: p.tasks.filter((t) => t.status === "DISTRIBUTED").length,
-  }));
-
-  return NextResponse.json(withProgress);
+  const { data: projects } = await supabaseAdmin.from('projects').select('*').eq('organizationId', user.organizationId).order('createdAt', { ascending: false });
+  const list = projects ?? [];
+  // Attach simple task counts per project
+  for (const p of list) {
+    const { data: tasks } = await supabaseAdmin.from('sourcing_tasks').select('id,status').eq('projectId', p.id);
+    const tlist = tasks ?? [];
+    (p as any).totalTasks = tlist.length;
+    (p as any).completedTasks = tlist.filter((t: any) => t.status === 'DISTRIBUTED').length;
+  }
+  return NextResponse.json(list);
 }
 
 export async function POST(req: NextRequest) {
@@ -40,8 +35,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const project = await prisma.project.create({
-    data: { ...parsed.data, organizationId: user.organizationId },
-  });
+  const { data: project } = await supabaseAdmin.from('projects').insert({ ...parsed.data, organizationId: user.organizationId }).select().maybeSingle();
   return NextResponse.json(project, { status: 201 });
 }
