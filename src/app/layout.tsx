@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
+import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,7 +29,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.variable}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <Sidebar />
+          <main className="md:pl-[240px] min-h-screen pb-20 md:pb-0 transition-all duration-200">
+            <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+              {children}
+            </div>
+          </main>
+        </Providers>
       </body>
     </html>
   );
