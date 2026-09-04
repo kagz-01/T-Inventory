@@ -24,7 +24,7 @@ DO $$ BEGIN
         );
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role') THEN
-        CREATE TYPE role AS ENUM ('ADMIN','MANAGER','EMPLOYEE');
+      CREATE TYPE role AS ENUM ('ADMIN','MANAGER','EMPLOYEE');
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_status') THEN
         CREATE TYPE task_status AS ENUM (
@@ -70,6 +70,7 @@ CREATE TABLE users (
   emailVerified timestamptz,
   image TEXT,
   phone TEXT,
+  passwordHash TEXT,
   role role NOT NULL DEFAULT 'EMPLOYEE',
   active boolean NOT NULL DEFAULT true,
   createdAt timestamptz NOT NULL DEFAULT now(),
