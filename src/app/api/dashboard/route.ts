@@ -20,7 +20,10 @@ export async function GET() {
   const tasksRes = await tasksQuery;
   const openTasks = tasksRes.data ?? [];
 
-  const eventsRes = await supabaseAdmin.from('task_events').select('*').order('createdAt', { ascending: false }).limit(20);
+  const taskIds = openTasks.map((t) => t.id);
+  const eventsRes = taskIds.length > 0
+    ? await supabaseAdmin.from('task_events').select('*, actor:users(id,name), task:sourcing_tasks(id,title)').in('taskId', taskIds).order('createdAt', { ascending: false }).limit(20)
+    : { data: [] };
   const recentEvents = eventsRes.data ?? [];
 
   const pendingInviteCount = isEmployee ? 0 : (await supabaseAdmin.from('invites').select('id', { head: true, count: 'exact' }).eq('organizationId', user.organizationId).eq('status', 'PENDING')).count ?? 0;

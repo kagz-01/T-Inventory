@@ -118,13 +118,6 @@ export default async function DashboardPage() {
       .order("lastActivityAt", { ascending: true });
   else tasksQ = tasksQ.order("lastActivityAt", { ascending: true });
   const tasksP = tasksQ;
-  const eventsP = isEmployee
-    ? Promise.resolve({ data: [] })
-    : supabaseAdmin
-        .from("task_events")
-        .select("*, actor:users(id,name), task:sourcing_tasks(id,title)")
-        .order("createdAt", { ascending: false })
-        .limit(10);
   const leadsP = isEmployee
     ? Promise.resolve({ count: 0 })
     : supabaseAdmin
@@ -151,25 +144,35 @@ export default async function DashboardPage() {
   const [
     { data: materials },
     { data: openTasks },
-    eventsRes,
     leadsRes,
     membersRes,
     invitesRes,
   ] = await Promise.all([
     materialsP,
     tasksP,
-    eventsP,
     leadsP,
     membersP,
     invitesP,
   ]);
-  const recentEvents = (eventsRes as any).data ?? [];
-  const newLeadsCount = (leadsRes as any).count ?? 0;
-  const memberCount = (membersRes as any).count ?? 0;
-  const pendingInviteCount = (invitesRes as any).count ?? 0;
 
   const materialsList = materials ?? [];
   const openTasksList = openTasks ?? [];
+
+  // Fetch events scoped to this org's tasks (prevents cross-org data leak)
+  let recentEvents: any[] = [];
+  if (!isEmployee && openTasksList.length > 0) {
+    const { data: eventsData } = await supabaseAdmin
+      .from("task_events")
+      .select("*, actor:users(id,name), task:sourcing_tasks(id,title)")
+      .in("taskId", openTasksList.map((t) => t.id))
+      .order("createdAt", { ascending: false })
+      .limit(10);
+    recentEvents = eventsData ?? [];
+  }
+
+  const newLeadsCount = (leadsRes as any).count ?? 0;
+  const memberCount = (membersRes as any).count ?? 0;
+  const pendingInviteCount = (invitesRes as any).count ?? 0;
   const lowStock = materialsList.filter(
     (m) => m.stockOnHand <= m.reorderThreshold
   );
