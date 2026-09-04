@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Settings,
   Mail,
   Users,
   Building2,
@@ -17,6 +16,10 @@ import {
   Shield,
   Trash2,
   RotateCcw,
+  Copy,
+  Check,
+  Key,
+  Link as LinkIcon,
 } from "lucide-react";
 
 type Member = {
@@ -33,6 +36,7 @@ type Invite = {
   email: string;
   role: string;
   status: string;
+  token: string;
   expiresAt: string;
   invitedBy?: { name: string | null };
 };
@@ -54,10 +58,23 @@ export default function SettingsPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Invite form
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("EMPLOYEE");
-  const [error, setError] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+
+  // Create user form
+  const [createEmail, setCreateEmail] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createRole, setCreateRole] = useState("EMPLOYEE");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  // Copy feedback
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function loadAll() {
     setLoading(true);
@@ -80,9 +97,10 @@ export default function SettingsPage() {
     if (session) loadAll();
   }, [session]);
 
+  // Send invite
   async function sendInvite(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setInviteError(null);
     setSending(true);
     const res = await fetch("/api/invites", {
       method: "POST",
@@ -92,11 +110,39 @@ export default function SettingsPage() {
     setSending(false);
     if (!res.ok) {
       const data = await res.json();
-      setError(typeof data.error === "string" ? data.error : "Couldn't send invite");
+      setInviteError(typeof data.error === "string" ? data.error : "Couldn't send invite");
       return;
     }
     setInviteEmail("");
     setInviteRole("EMPLOYEE");
+    loadAll();
+  }
+
+  // Create user with password
+  async function createUser(e: React.FormEvent) {
+    e.preventDefault();
+    setCreateError(null);
+    setCreating(true);
+    const res = await fetch("/api/employees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: createEmail,
+        name: createName || undefined,
+        password: createPassword,
+        role: createRole,
+      }),
+    });
+    setCreating(false);
+    if (!res.ok) {
+      const data = await res.json();
+      setCreateError(typeof data.error === "string" ? data.error : "Couldn't create user");
+      return;
+    }
+    setCreateEmail("");
+    setCreateName("");
+    setCreatePassword("");
+    setCreateRole("EMPLOYEE");
     loadAll();
   }
 
@@ -139,6 +185,13 @@ export default function SettingsPage() {
       body: JSON.stringify({ name: orgNameDraft }),
     });
     loadAll();
+  }
+
+  function copyInviteLink(token: string) {
+    const url = `${window.location.origin}/invite/${token}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(token);
+    setTimeout(() => setCopiedId(null), 2000);
   }
 
   if (!isAdmin) {
@@ -188,15 +241,74 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Invite Form */}
+      {/* Create User with Password */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <UserPlus className="h-4 w-4" />
-            Invite a Teammate
+            <Key className="h-4 w-4" />
+            Create User Account
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Create an account directly. The user can sign in with email and password.
+          </p>
+          <form onSubmit={createUser} className="space-y-3">
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Input
+                type="email"
+                required
+                value={createEmail}
+                onChange={(e) => setCreateEmail(e.target.value)}
+                placeholder="Email address"
+              />
+              <Input
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder="Full name (optional)"
+              />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Input
+                type="password"
+                required
+                minLength={6}
+                value={createPassword}
+                onChange={(e) => setCreatePassword(e.target.value)}
+                placeholder="Password (min 6 chars)"
+              />
+              <select
+                value={createRole}
+                onChange={(e) => setCreateRole(e.target.value)}
+                className="input"
+              >
+                <option value="EMPLOYEE">Employee</option>
+                <option value="MANAGER">Manager</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+            {createError && (
+              <p className="text-sm text-destructive">{createError}</p>
+            )}
+            <Button type="submit" disabled={creating}>
+              {creating ? "Creating..." : "Create Account"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Send Invite */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Send Invite Link
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Send an invite link. They&apos;ll sign in with Google and join your team.
+          </p>
           <form onSubmit={sendInvite} className="flex flex-col sm:flex-row gap-2">
             <Input
               type="email"
@@ -219,17 +331,17 @@ export default function SettingsPage() {
               {sending ? "Sending..." : "Send Invite"}
             </Button>
           </form>
-          {error && (
-            <p className="text-sm text-destructive mt-2">{error}</p>
+          {inviteError && (
+            <p className="text-sm text-destructive mt-2">{inviteError}</p>
           )}
         </CardContent>
       </Card>
 
-      {/* Pending Invites */}
+      {/* Pending Invites with Copy Link */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Mail className="h-4 w-4" />
+            <LinkIcon className="h-4 w-4" />
             Pending Invites
           </CardTitle>
         </CardHeader>
@@ -254,37 +366,70 @@ export default function SettingsPage() {
                 .map((i) => (
                   <div
                     key={i.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border"
+                    className="flex flex-col gap-3 p-3 rounded-lg border"
                   >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{i.email}</span>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {i.role}
-                        </Badge>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{i.email}</span>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {i.role}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Expires {new Date(i.expiresAt).toLocaleDateString()}
+                          {i.invitedBy?.name
+                            ? ` · invited by ${i.invitedBy.name}`
+                            : ""}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Expires {new Date(i.expiresAt).toLocaleDateString()}
-                        {i.invitedBy?.name
-                          ? ` · invited by ${i.invitedBy.name}`
-                          : ""}
-                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyInviteLink(i.token)}
+                          title="Copy invite link"
+                        >
+                          {copiedId === i.token ? (
+                            <Check className="h-3 w-3 text-success" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resendInvite(i.token)}
+                          title="Resend invite"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => revokeInvite(i.id)}
+                          title="Revoke invite"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                    {/* Invite link preview */}
+                    <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-xs font-mono text-muted-foreground">
+                      <LinkIcon className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {typeof window !== "undefined"
+                          ? `${window.location.origin}/invite/${i.token}`
+                          : `/invite/${i.token}`}
+                      </span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => resendInvite(i.id)}
+                        className="ml-auto h-6 px-2 shrink-0"
+                        onClick={() => copyInviteLink(i.token)}
                       >
-                        <RotateCcw className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => revokeInvite(i.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-3 w-3" />
+                        {copiedId === i.token ? "Copied!" : "Copy"}
                       </Button>
                     </div>
                   </div>
