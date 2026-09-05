@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { cookies } from "next/headers";
 import Providers from "@/components/Providers";
 import Sidebar from "@/components/Sidebar";
 import AppShell from "@/components/AppShell";
@@ -27,12 +28,17 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read session cookie server-side to determine if sidebar padding is needed
+  const cookieStore = cookies();
+  const sessionToken = cookieStore.get("next-auth.session-token")?.value;
+  const isAuthenticated = !!sessionToken;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.variable}>
         <Providers>
           <Sidebar />
-          <AppShell>{children}</AppShell>
+          <AppShell isAuthenticated={isAuthenticated}>{children}</AppShell>
         </Providers>
       </body>
     </html>
