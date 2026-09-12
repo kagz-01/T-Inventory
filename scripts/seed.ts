@@ -10,14 +10,43 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-const Role = { ADMIN: "ADMIN", EMPLOYEE: "EMPLOYEE" } as const;
+const Role = { ADMIN: "ADMIN", MANAGER: "MANAGER", EMPLOYEE: "EMPLOYEE" } as const;
 
 async function main() {
   console.log("Seeding sample data (Supabase)…");
+    console.log('SUPABASE_URL present:', !!SUPABASE_URL, 'SERVICE_KEY length:', SUPABASE_SERVICE_ROLE_KEY ? SUPABASE_SERVICE_ROLE_KEY.length : 0);
 
-  const { data: org } = await supabase.from("organizations").upsert({ id: "seed-org", name: "Touchline", contactEmail: "boss@example.com" }, { onConflict: "id" }).select().maybeSingle();
+  const { data: orgUpsert } = await supabase.from("organizations").upsert({ id: "seed-org", name: "Touchline" }, { onConflict: "id" }).select().maybeSingle();
+  let org = orgUpsert;
+  if (!org) {
+    const { data: orgInserted, error: orgInsertError } = await supabase.from('organizations').insert({ id: 'seed-org', name: 'Touchline' }).select().maybeSingle();
+    if (orgInsertError) {
+      console.error('Organization insert error:', orgInsertError);
+      // Try to find an existing organization to use instead
+      const { data: anyOrg } = await supabase.from('organizations').select('*').limit(1).maybeSingle();
+      if (anyOrg) {
+        console.log('Using existing organization', anyOrg.id);
+        org = anyOrg;
+      } else {
+        process.exit(1);
+      }
+    } else {
+      if (!orgInserted) {
+        console.error('Organization insert returned no data');
+        const { data: anyOrg } = await supabase.from('organizations').select('*').limit(1).maybeSingle();
+        if (anyOrg) {
+          console.log('Using existing organization', anyOrg.id);
+          org = anyOrg;
+        } else {
+          process.exit(1);
+        }
+      }
+      org = orgInserted;
+    }
+  }
 
   const { data: boss } = await supabase.from("users").upsert({ name: "The Boss", email: "boss@example.com", role: Role.ADMIN, organizationId: org.id }, { onConflict: "email" }).select().maybeSingle();
+  const { data: manager } = await supabase.from("users").upsert({ name: "Second In Command", email: "manager@example.com", role: Role.MANAGER, organizationId: org.id }, { onConflict: "email" }).select().maybeSingle();
   const { data: employee1 } = await supabase.from("users").upsert({ name: "Employee One", email: "employee1@example.com", role: Role.EMPLOYEE, organizationId: org.id }, { onConflict: "email" }).select().maybeSingle();
   const { data: employee2 } = await supabase.from("users").upsert({ name: "Employee Two", email: "employee2@example.com", role: Role.EMPLOYEE, organizationId: org.id }, { onConflict: "email" }).select().maybeSingle();
 

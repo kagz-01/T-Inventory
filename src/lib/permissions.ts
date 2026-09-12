@@ -30,28 +30,29 @@ export async function requireOrgUser(): Promise<
 }
 
 export function canManageCatalogue(role: Role | string) {
-  return role === Role.ADMIN || role === Role.MANAGER;
+  return role === Role.ADMIN;
 }
 
 export function canApprovePurchase(role: Role | string) {
+  // Managers may approve purchases when delegated
   return role === Role.ADMIN || role === Role.MANAGER;
 }
 
 export function canReassignTask(role: Role | string) {
-  // Admin/Manager can reassign anyone's task. Employees can only hand off their own
-  // (checked separately against task.assignedToId in the route handler).
-  return role === Role.ADMIN || role === Role.MANAGER || role === Role.EMPLOYEE;
-}
-
-export function canManageTeam(role: Role | string) {
-  // Send/revoke invites, view member list. Role changes are Admin-only (see isAdmin).
+  // Admin and Manager can reassign tasks. Employees can only update their own status
+  // (assignment ownership checks happen in route handlers).
   return role === Role.ADMIN || role === Role.MANAGER;
 }
 
+export function canManageTeam(role: Role | string) {
+  // Only Admin can send/revoke invites and view member list.
+  return role === Role.ADMIN;
+}
+
 export function canInviteRole(inviterRole: Role | string, targetRole: Role | string) {
-  // Managers can only invite Employees. Only Admin can invite a Manager or another Admin.
+  // Admins can invite Managers and Employees. Managers may invite Employees only.
   if (inviterRole === Role.ADMIN) return true;
-  if (inviterRole === Role.MANAGER) return targetRole === Role.EMPLOYEE;
+  if (inviterRole === Role.MANAGER && targetRole === Role.EMPLOYEE) return true;
   return false;
 }
 

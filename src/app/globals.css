@@ -24,6 +24,12 @@
     --input: 220 13% 91%;
     --ring: 238.7 83.5% 66.7%;
     --radius: 0.625rem;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --danger: 0 84% 60%;
+    --danger-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -46,6 +52,12 @@
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
     --ring: 238.7 83.5% 66.7%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --danger: 0 62.8% 30.6%;
+    --danger-foreground: 0 0% 100%;
   }
 
   * {
@@ -72,12 +84,17 @@
       hsl(var(--muted-foreground) / 0.08),
       transparent
     );
-    animation: shimmer 2s infinite linear;
+    animation: skeleton-shimmer 2s infinite linear;
   }
 
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@keyframes skeleton-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 
 @layer components {

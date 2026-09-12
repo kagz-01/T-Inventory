@@ -12,9 +12,8 @@ import { Role } from "@/types/dbEnums";
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await requireOrgUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canReassignTask(user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  // Role-specific checks happen after we load the task (employees may only act
+  // on tasks assigned to themselves; Admin/Manager can act on any task).
 
   const body = await req.json();
   const parsed = reassignSchema.safeParse(body);

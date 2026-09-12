@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   description: "Materials sourcing & inventory management for branding and signage work",
   manifest: "/manifest.json",
   icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
+  metadataBase: new URL("https://app.touchlineltd.co.ke"),
 };
 
 export const viewport: Viewport = {

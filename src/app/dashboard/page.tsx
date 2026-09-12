@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import GetStartedGuide from "@/components/GetStartedGuide";
+import DashboardCharts from "@/components/DashboardCharts";
 import { formatDistanceToNow } from "date-fns";
 import { Role } from "@/types/dbEnums";
 import {
@@ -184,6 +185,15 @@ export default async function DashboardPage() {
   const statusCounts = openTasksList.reduce<Record<string, number>>(
     (acc, t) => {
       acc[t.status] = (acc[t.status] || 0) + 1;
+      return acc;
+    },
+    {}
+  );
+
+  // Materials by category for charts
+  const materialsByCategory = materialsList.reduce<Record<string, number>>(
+    (acc, m) => {
+      acc[m.category] = (acc[m.category] || 0) + 1;
       return acc;
     },
     {}
@@ -404,6 +414,12 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Charts */}
+      <DashboardCharts
+        tasksByStatus={statusCounts}
+        materialsByCategory={materialsByCategory}
+      />
 
       {/* Bottom Grid: Alerts + Activity */}
       <div className="grid lg:grid-cols-3 gap-6">

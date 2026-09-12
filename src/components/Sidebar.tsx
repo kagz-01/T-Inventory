@@ -16,6 +16,7 @@ import {
   Moon,
   Target,
   Search,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,6 +26,7 @@ import { useEffect, useState } from "react";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/tasks", label: "Tasks", icon: ListTodo, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+  { href: "/projects", label: "Projects", icon: FolderOpen, roles: ["ADMIN", "MANAGER"] },
   { href: "/leads", label: "Leads", icon: Target, roles: ["ADMIN", "MANAGER"] },
   { href: "/materials", label: "Materials", icon: Package, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/vendors", label: "Vendors", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
@@ -35,6 +37,7 @@ const navItems = [
 const mobileTabs = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/tasks", label: "Tasks", icon: ListTodo, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+  { href: "/projects", label: "Projects", icon: FolderOpen, roles: ["ADMIN", "MANAGER"] },
   { href: "/materials", label: "Stock", icon: Package, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/vendors", label: "Vendors", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/settings", label: "More", icon: Settings, roles: ["ADMIN"] },

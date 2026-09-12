@@ -11,7 +11,8 @@ const INVITE_EXPIRY_DAYS = 7;
 export async function GET() {
   const user = await requireOrgUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canManageTeam(user.role)) {
+  // Allow Admins and Managers to view pending invites (Managers may only invite Employees).
+  if (!(user.role === "ADMIN" || user.role === "MANAGER")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -30,7 +31,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await requireOrgUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  if (!canManageTeam(user.role)) {
+  // Allow Admins and Managers to create invites; canInviteRole will enforce
+  // that Managers may only invite Employees.
+  if (!(user.role === "ADMIN" || user.role === "MANAGER")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
