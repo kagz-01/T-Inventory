@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { cookies } from "next/headers";
 import Providers from "@/components/Providers";
+import RoleThemeProvider from "@/components/RoleThemeProvider";
 import Sidebar from "@/components/Sidebar";
 import AppShell from "@/components/AppShell";
 
@@ -38,8 +39,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={inter.variable}>
         <Providers>
-          <Sidebar />
-          <AppShell isAuthenticated={isAuthenticated}>{children}</AppShell>
+          <RoleThemeProvider>
+            <Sidebar />
+            <AppShell isAuthenticated={isAuthenticated}>{children}</AppShell>
+          </RoleThemeProvider>
         </Providers>
       </body>
     </html>

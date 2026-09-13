@@ -60,6 +60,37 @@
     --danger-foreground: 0 0% 100%;
   }
 
+  /* ── Role-based themes ── */
+  /* Admin: Gold/Amber premium */
+  [data-role="ADMIN"] {
+    --primary: 38 92% 50%;
+    --ring: 38 92% 50%;
+  }
+  .dark [data-role="ADMIN"] {
+    --primary: 38 92% 50%;
+    --ring: 38 92% 50%;
+  }
+
+  /* Manager: Blue professional */
+  [data-role="MANAGER"] {
+    --primary: 221 83% 53%;
+    --ring: 221 83% 53%;
+  }
+  .dark [data-role="MANAGER"] {
+    --primary: 221 83% 53%;
+    --ring: 221 83% 53%;
+  }
+
+  /* Employee: Emerald clean */
+  [data-role="EMPLOYEE"] {
+    --primary: 160 84% 39%;
+    --ring: 160 84% 39%;
+  }
+  .dark [data-role="EMPLOYEE"] {
+    --primary: 160 84% 39%;
+    --ring: 160 84% 39%;
+  }
+
   * {
     @apply border-border;
   }

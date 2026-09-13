@@ -17,6 +17,9 @@ import {
   Target,
   Search,
   FolderOpen,
+  Crown,
+  Shield,
+  UserCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -136,7 +139,12 @@ export default function Sidebar() {
             <ThemeToggle />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{session.user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{role}</p>
+              <div className="flex items-center gap-1">
+                {role === "ADMIN" && <Crown className="h-3 w-3 text-amber-500" />}
+                {role === "MANAGER" && <Shield className="h-3 w-3 text-blue-500" />}
+                {role === "EMPLOYEE" && <UserCheck className="h-3 w-3 text-emerald-500" />}
+                <p className="text-xs text-muted-foreground truncate">{role}</p>
+              </div>
             </div>
             <Button
               variant="ghost"
