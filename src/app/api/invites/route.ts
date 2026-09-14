@@ -8,10 +8,10 @@ import nodemailer from "nodemailer";
 const INVITE_EXPIRY_DAYS = 7;
 
 function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const port = process.env.SMTP_PORT;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const host = process.env.EMAIL_SERVER_HOST;
+  const port = process.env.EMAIL_SERVER_PORT;
+  const user = process.env.EMAIL_SERVER_USER;
+  const pass = process.env.EMAIL_SERVER_PASSWORD;
   if (!host || !user || !pass) return null;
   return nodemailer.createTransport({
     host,
@@ -30,7 +30,7 @@ function buildInviteEmail(opts: {
 }) {
   const roleLabel = opts.role === "ADMIN" ? "Admin" : opts.role === "MANAGER" ? "Manager" : "Employee";
   return {
-    from: `"${opts.orgName}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    from: `"${opts.orgName}" <${process.env.EMAIL_FROM || "no-reply@touchlineltd.co.ke"}>`,
     to: opts.to,
     subject: `You're invited to join ${opts.orgName} as ${roleLabel}`,
     html: `
