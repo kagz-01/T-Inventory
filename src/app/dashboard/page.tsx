@@ -6,6 +6,8 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import GetStartedGuide from "@/components/GetStartedGuide";
 import DashboardCharts from "@/components/DashboardCharts";
+import Reveal from "@/components/Reveal";
+import AnimatedCounter from "@/components/AnimatedCounter";
 import { formatDistanceToNow } from "date-fns";
 import { Role } from "@/types/dbEnums";
 import {
@@ -21,14 +23,9 @@ import {
   CheckCircle2,
   Crown,
   Shield,
-  Target,
-  TrendingUp,
   Zap,
-  Star,
+  TrendingUp,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 const STALL_HOURS = 48;
 
@@ -39,74 +36,6 @@ function getGreeting() {
   return "Good evening";
 }
 
-function KPICard({
-  icon: Icon,
-  label,
-  value,
-  trend,
-  trendLabel,
-  variant = "default",
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  trend?: "up" | "down" | "neutral";
-  trendLabel?: string;
-  variant?: "default" | "danger" | "warning" | "success";
-}) {
-  const iconColors = {
-    default: "bg-primary/10 text-primary",
-    danger: "bg-red-500/10 text-red-500",
-    warning: "bg-amber-500/10 text-amber-500",
-    success: "bg-emerald-500/10 text-emerald-500",
-  };
-
-  const trendColors = {
-    up: "text-emerald-500",
-    down: "text-red-500",
-    neutral: "text-muted-foreground",
-  };
-
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconColors[variant]}`}>
-            <Icon className="h-5 w-5" />
-          </div>
-          {trend && trendLabel && (
-            <span className={`text-xs font-medium ${trendColors[trend]}`}>
-              {trend === "up" ? "\u2191" : trend === "down" ? "\u2193" : "\u2014"} {trendLabel}
-            </span>
-          )}
-        </div>
-        <div className="mt-4">
-          <p className="text-2xl font-bold tracking-tight">{value}</p>
-          <p className="text-sm text-muted-foreground mt-0.5">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ProgressBar({ completed, total }: { completed: number; total: number }) {
-  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
-  return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm font-medium">{completed} of {total} completed</span>
-        <span className="text-sm font-semibold text-primary">{pct}%</span>
-      </div>
-      <div className="h-2.5 w-full rounded-full bg-muted overflow-hidden">
-        <div
-          className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -114,18 +43,18 @@ export default async function DashboardPage() {
   const user = session.user as any;
   if (!user.organizationId) {
     return (
-      <Card className="max-w-md">
-        <CardContent className="p-6 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mx-auto mb-4">
-            <Inbox className="h-6 w-6 text-muted-foreground" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="card-glass rounded-2xl p-8 max-w-md text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mx-auto mb-4">
+            <Inbox className="h-7 w-7 text-muted-foreground" />
           </div>
-          <h1 className="text-lg font-semibold mb-1">Almost there</h1>
+          <h1 className="text-xl font-bold font-display mb-2">Almost there</h1>
           <p className="text-sm text-muted-foreground">
             Your account isn&apos;t attached to an organization yet. If you were
             invited, try signing out and back in. Otherwise, contact your admin.
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -151,8 +80,7 @@ export default async function DashboardPage() {
       .eq("assignedToId", user.id)
       .order("priority", { ascending: false })
       .order("lastActivityAt", { ascending: true });
-  else
-    tasksQ = tasksQ.order("lastActivityAt", { ascending: true });
+  else tasksQ = tasksQ.order("lastActivityAt", { ascending: true });
 
   const tasksP = tasksQ;
 
@@ -196,7 +124,6 @@ export default async function DashboardPage() {
   const materialsList = materials ?? [];
   const openTasksList = openTasks ?? [];
 
-  // Fetch events scoped to this org's tasks
   let recentEvents: any[] = [];
   if (!isEmployee && openTasksList.length > 0) {
     const { data: eventsData } = await supabaseAdmin
@@ -254,99 +181,110 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/30 dark:to-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white">
-              <Zap className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {greeting}, {user.name?.split(" ")[0] || "there"}
-              </h1>
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                Let&apos;s get things done
-              </p>
+        {/* Hero Header */}
+        <Reveal>
+          <div className="hero-gradient rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22g%22%20width%3D%2220%22%20height%3D%2220%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22rgba(255%2C255%2C255%2C0.1)%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23g)%22/%3E%3C/svg%3E')] opacity-30" />
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <Zap className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-display">
+                  {greeting}, {user.name?.split(" ")[0] || "there"}
+                </h1>
+                <p className="text-white/80 text-sm mt-0.5">
+                  Let&apos;s get things done
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* Progress Card */}
-        <Card className="border-emerald-200 dark:border-emerald-800">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              <span className="text-sm font-medium">Today&apos;s Progress</span>
+        <Reveal delay={80}>
+          <div className="card-glass rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
+              <span className="text-sm font-semibold font-display">Today&apos;s Progress</span>
             </div>
-            <ProgressBar
-              completed={completedTasks.length}
-              total={openTasksList.length}
-            />
-            <div className="grid grid-cols-3 gap-3 mt-4">
-              <div className="text-center p-2 rounded-lg bg-muted/50">
-                <p className="text-lg font-bold">{pendingTasks.length}</p>
-                <p className="text-xs text-muted-foreground">Pending</p>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">
+                  {completedTasks.length} of {openTasksList.length} completed
+                </span>
+                <span className="text-sm font-bold font-mono text-primary">
+                  {openTasksList.length === 0 ? 0 : Math.round((completedTasks.length / openTasksList.length) * 100)}%
+                </span>
               </div>
-              <div className="text-center p-2 rounded-lg bg-muted/50">
-                <p className="text-lg font-bold">{inProgressTasks.length}</p>
-                <p className="text-xs text-muted-foreground">In Progress</p>
-              </div>
-              <div className="text-center p-2 rounded-lg bg-muted/50">
-                <p className="text-lg font-bold">{completedTasks.length}</p>
-                <p className="text-xs text-muted-foreground">Completed</p>
+              <div className="progress-bar">
+                <div
+                  className="progress-bar-fill"
+                  style={{ width: `${openTasksList.length === 0 ? 0 : Math.round((completedTasks.length / openTasksList.length) * 100)}%` }}
+                />
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: "Pending", count: pendingTasks.length },
+                { label: "In Progress", count: inProgressTasks.length },
+                { label: "Completed", count: completedTasks.length },
+              ].map((item) => (
+                <div key={item.label} className="text-center p-3 rounded-xl bg-muted/30">
+                  <p className="text-xl font-bold font-mono">{item.count}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
 
         {/* My Tasks */}
-        <div>
-          <h2 className="text-base font-semibold mb-3">My Tasks</h2>
-          {openTasksList.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/30 mb-4">
-                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+        <Reveal delay={160}>
+          <div>
+            <h2 className="text-lg font-bold font-display mb-3">My Tasks</h2>
+            {openTasksList.length === 0 ? (
+              <div className="card-glass rounded-2xl p-12 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/30 mx-auto mb-4">
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500" />
                 </div>
-                <p className="text-sm font-medium">All clear</p>
+                <p className="text-sm font-semibold font-display">All clear</p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Nothing assigned to you right now. Check back later.
                 </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-2">
-              {openTasksList.map((t) => (
-                <Link key={t.id} href={`/tasks/${t.id}`}>
-                  <Card className="hover:shadow-md transition-all hover:border-emerald-200 dark:hover:border-emerald-800 cursor-pointer">
-                    <CardContent className="flex items-center justify-between p-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{t.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {t.material.name} · needs {t.quantityNeeded}{" "}
-                          {t.material.unit}
-                        </p>
-                        {stalledTasks.some((s) => s.id === t.id) && (
-                          <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            No activity{" "}
-                            {formatDistanceToNow(t.lastActivityAt, {
-                              addSuffix: true,
-                            })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {openTasksList.map((t, i) => (
+                  <Reveal key={t.id} delay={i * 60}>
+                    <Link href={`/tasks/${t.id}`}>
+                      <div className="card-glass rounded-xl p-4 flex items-center justify-between cursor-pointer group">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">{t.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {t.material.name} · needs {t.quantityNeeded} {t.material.unit}
                           </p>
-                        )}
+                          {stalledTasks.some((s) => s.id === t.id) && (
+                            <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              No activity {formatDistanceToNow(t.lastActivityAt, { addSuffix: true })}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-3">
+                          <StatusBadge status={t.status} />
+                          <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-3">
-                        <StatusBadge status={t.status} />
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+                    </Link>
+                  </Reveal>
+                ))}
+              </div>
+            )}
+          </div>
+        </Reveal>
       </div>
     );
   }
@@ -358,7 +296,6 @@ export default async function DashboardPage() {
     const urgentTasks = openTasksList.filter((t) => t.priority === "HIGH");
     const teamTasks = openTasksList;
 
-    // Per-member task counts
     const memberTaskCounts = membersList
       .filter((m: any) => m.active)
       .map((m: any) => {
@@ -377,69 +314,72 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        {/* Header */}
-        <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border border-blue-200 dark:border-blue-800 p-6">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white">
-              <Shield className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {greeting}, {user.name?.split(" ")[0] || "Manager"}
-              </h1>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                Here&apos;s your team&apos;s overview
-              </p>
+        {/* Hero Header */}
+        <Reveal>
+          <div className="hero-gradient rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22g%22%20width%3D%2220%22%20height%3D%2220%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22rgba(255%2C255%2C255%2C0.1)%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23g)%22/%3E%3C/svg%3E')] opacity-30" />
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <Shield className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-display">
+                  {greeting}, {user.name?.split(" ")[0] || "Manager"}
+                </h1>
+                <p className="text-white/80 text-sm mt-0.5">
+                  Here&apos;s your team&apos;s overview
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </Reveal>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <KPICard
-            icon={ListTodo}
-            label="Team Tasks"
-            value={teamTasks.length}
-            variant={urgentTasks.length > 0 ? "danger" : "default"}
-            trendLabel={
-              urgentTasks.length > 0
-                ? `${urgentTasks.length} urgent`
-                : undefined
-            }
-          />
-          <KPICard
-            icon={Clock}
-            label="Pending Review"
-            value={teamTasks.filter((t) => t.status === "PENDING").length}
-            variant="warning"
-          />
-          <KPICard
-            icon={AlertTriangle}
-            label="Overdue"
-            value={stalledTasks.length}
-            variant={stalledTasks.length > 0 ? "danger" : "success"}
-            trendLabel={
-              stalledTasks.length === 0 ? "On track" : undefined
-            }
-          />
+          {[
+            { icon: ListTodo, label: "Team Tasks", value: teamTasks.length, variant: urgentTasks.length > 0 ? "danger" : "default" as const, trend: urgentTasks.length > 0 ? `${urgentTasks.length} urgent` : undefined },
+            { icon: Clock, label: "Pending Review", value: teamTasks.filter((t) => t.status === "PENDING").length, variant: "warning" as const },
+            { icon: AlertTriangle, label: "Overdue", value: stalledTasks.length, variant: stalledTasks.length > 0 ? "danger" : "success" as const, trend: stalledTasks.length === 0 ? "On track" : undefined },
+          ].map((kpi, i) => (
+            <Reveal key={kpi.label} delay={i * 80}>
+              <div className="kpi-card group">
+                <div className="flex items-start justify-between">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                    kpi.variant === "danger" ? "bg-red-500/10 text-red-500" :
+                    kpi.variant === "warning" ? "bg-amber-500/10 text-amber-500" :
+                    kpi.variant === "success" ? "bg-emerald-500/10 text-emerald-500" :
+                    "bg-primary/10 text-primary"
+                  }`}>
+                    <kpi.icon className="h-5 w-5" />
+                  </div>
+                  {kpi.trend && (
+                    <span className="text-xs font-medium text-muted-foreground font-mono">
+                      {kpi.trend}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <p className="text-2xl font-bold tracking-tight font-mono">
+                    <AnimatedCounter value={kpi.value} />
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{kpi.label}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
         </div>
 
         {/* Task Pipeline */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Task Pipeline</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={240}>
+          <div className="card-glass rounded-2xl p-6">
+            <h2 className="text-base font-bold font-display mb-4">Task Pipeline</h2>
             {openTasksList.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground">
-                  No open tasks for your team.
-                </p>
+                <p className="text-sm text-muted-foreground">No open tasks for your team.</p>
                 <Link href="/tasks">
-                  <Button size="sm" className="mt-3">
-                    <Plus className="h-4 w-4" />
-                    Create Task
-                  </Button>
+                  <button className="btn-primary mt-3">
+                    <Plus className="h-4 w-4" /> Create Task
+                  </button>
                 </Link>
               </div>
             ) : (
@@ -448,9 +388,9 @@ export default async function DashboardPage() {
                   <Link
                     key={status}
                     href={`/tasks?status=${status}`}
-                    className="group rounded-lg border p-3 text-center transition-all hover:shadow-sm hover:border-blue-200 dark:hover:border-blue-800"
+                    className="rounded-xl border border-border/50 p-3 text-center transition-all duration-300 hover:shadow-sm hover:border-primary/20 hover:bg-primary/5"
                   >
-                    <p className="text-xl font-bold">{count as number}</p>
+                    <p className="text-xl font-bold font-mono">{count as number}</p>
                     <div className="mt-1">
                       <StatusBadge status={status} />
                     </div>
@@ -458,62 +398,52 @@ export default async function DashboardPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
         {/* Team Progress */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Team Progress</CardTitle>
-            <Link
-              href="/employees"
-              className="text-xs text-primary hover:underline"
-            >
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={320}>
+          <div className="card-glass rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold font-display">Team Progress</h2>
+              <Link href="/employees" className="text-xs text-primary hover:underline font-medium">
+                View all
+              </Link>
+            </div>
             {memberTaskCounts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No team tasks yet
-              </p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No team tasks yet</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {memberTaskCounts.map((m: { id: string; name: string; total: number; completed: number }) => (
-                  <div key={m.id} className="space-y-1.5">
+                  <div key={m.id} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{m.name}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground font-mono">
                         {m.completed}/{m.total}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                    <div className="progress-bar">
                       <div
-                        className="h-full rounded-full bg-blue-500 transition-all duration-500"
-                        style={{
-                          width: `${m.total === 0 ? 0 : Math.round((m.completed / m.total) * 100)}%`,
-                        }}
+                        className="progress-bar-fill"
+                        style={{ width: `${m.total === 0 ? 0 : Math.round((m.completed / m.total) * 100)}%` }}
                       />
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
-        {/* Low Stock Alerts */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Low Stock</CardTitle>
-            <Link
-              href="/materials"
-              className="text-xs text-primary hover:underline"
-            >
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent>
+        {/* Low Stock */}
+        <Reveal delay={400}>
+          <div className="card-glass rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold font-display">Low Stock</h2>
+              <Link href="/materials" className="text-xs text-primary hover:underline font-medium">
+                View all
+              </Link>
+            </div>
             {lowStock.length === 0 ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                 <CheckCircle2 className="h-4 w-4 text-success" />
@@ -524,36 +454,29 @@ export default async function DashboardPage() {
                 {lowStock.slice(0, 5).map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0"
+                    className="flex items-center justify-between text-sm py-2 border-b border-border/50 last:border-0"
                   >
                     <span className="font-medium truncate">{m.name}</span>
-                    <Badge variant="danger" className="shrink-0 ml-2">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-danger/10 text-danger">
                       {m.stockOnHand}/{m.reorderThreshold} {m.unit}
-                    </Badge>
+                    </span>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
         {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={480}>
+          <div className="card-glass rounded-2xl p-6">
+            <h2 className="text-base font-bold font-display mb-4">Recent Activity</h2>
             {recentEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No activity yet
-              </p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No activity yet</p>
             ) : (
               <div className="space-y-3">
                 {recentEvents.slice(0, 5).map((e: any) => (
-                  <div
-                    key={e.id}
-                    className="flex items-start gap-3 text-sm"
-                  >
+                  <div key={e.id} className="flex items-start gap-3 text-sm">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
                       {e.actor.name?.[0] || "U"}
                     </div>
@@ -578,8 +501,8 @@ export default async function DashboardPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
       </div>
     );
   }
@@ -603,130 +526,119 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 border border-amber-200 dark:border-amber-800 p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-white">
-              <Crown className="h-5 w-5" />
+      {/* Hero Header */}
+      <Reveal>
+        <div className="hero-gradient rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22g%22%20width%3D%2220%22%20height%3D%2220%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22rgba(255%2C255%2C255%2C0.1)%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23g)%22/%3E%3C/svg%3E')] opacity-30" />
+          <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <Crown className="h-6 w-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-display">
+                  {greeting}, Boss
+                </h1>
+                <p className="text-white/80 text-sm mt-0.5">
+                  Overview of your operations
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {greeting}, Boss
-              </h1>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                Overview of your operations
-              </p>
+            <div className="flex gap-2">
+              <Link href="/tasks">
+                <button className="inline-flex items-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
+                  <Plus className="h-4 w-4" /> New Task
+                </button>
+              </Link>
+              <Link href="/settings">
+                <button className="inline-flex items-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
+                  <Settings className="h-4 w-4" /> Settings
+                </button>
+              </Link>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/tasks">
-              <Button size="sm">
-                <Plus className="h-4 w-4" />
-                New Task
-              </Button>
-            </Link>
-            <Link href="/settings">
-              <Button variant="outline" size="sm">
-                <Settings className="h-4 w-4" />
-                Settings
-              </Button>
-            </Link>
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {/* Onboarding guide */}
       {membersList.length + pendingInviteCount < 2 && (
-        <GetStartedGuide
-          memberCount={membersList.length}
-          pendingInviteCount={pendingInviteCount}
-        />
+        <Reveal delay={80}>
+          <GetStartedGuide
+            memberCount={membersList.length}
+            pendingInviteCount={pendingInviteCount}
+          />
+        </Reveal>
       )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard
-          icon={Users}
-          label="Active Team"
-          value={activeMembers}
-          variant="default"
-          trendLabel={
-            pendingInviteCount > 0
-              ? `${pendingInviteCount} pending`
-              : undefined
-          }
-        />
-        <KPICard
-          icon={ListTodo}
-          label="Open Tasks"
-          value={openTasksList.length}
-          variant={urgentTasks.length > 0 ? "danger" : "default"}
-          trendLabel={
-            urgentTasks.length > 0
-              ? `${urgentTasks.length} urgent`
-              : undefined
-          }
-        />
-        <KPICard
-          icon={Package}
-          label="Low Stock"
-          value={lowStock.length}
-          variant={lowStock.length > 0 ? "warning" : "success"}
-          trendLabel={lowStock.length === 0 ? "All good" : undefined}
-        />
-        <KPICard
-          icon={Clock}
-          label="Stalled Tasks"
-          value={stalledTasks.length}
-          variant={stalledTasks.length > 0 ? "warning" : "success"}
-          trendLabel={
-            stalledTasks.length === 0 ? "Moving smoothly" : undefined
-          }
-        />
+        {[
+          { icon: Users, label: "Active Team", value: activeMembers, variant: "default" as const, trend: pendingInviteCount > 0 ? `${pendingInviteCount} pending` : undefined },
+          { icon: ListTodo, label: "Open Tasks", value: openTasksList.length, variant: urgentTasks.length > 0 ? "danger" : "default" as const, trend: urgentTasks.length > 0 ? `${urgentTasks.length} urgent` : undefined },
+          { icon: Package, label: "Low Stock", value: lowStock.length, variant: lowStock.length > 0 ? "warning" : "success" as const, trend: lowStock.length === 0 ? "All good" : undefined },
+          { icon: Clock, label: "Stalled Tasks", value: stalledTasks.length, variant: stalledTasks.length > 0 ? "warning" : "success" as const, trend: stalledTasks.length === 0 ? "Moving smoothly" : undefined },
+        ].map((kpi, i) => (
+          <Reveal key={kpi.label} delay={i * 80}>
+            <div className="kpi-card group">
+              <div className="flex items-start justify-between">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                  kpi.variant === "danger" ? "bg-red-500/10 text-red-500" :
+                  kpi.variant === "warning" ? "bg-amber-500/10 text-amber-500" :
+                  kpi.variant === "success" ? "bg-emerald-500/10 text-emerald-500" :
+                  "bg-primary/10 text-primary"
+                }`}>
+                  <kpi.icon className="h-5 w-5" />
+                </div>
+                {kpi.trend && (
+                  <span className="text-xs font-medium text-muted-foreground font-mono">
+                    {kpi.trend}
+                  </span>
+                )}
+              </div>
+              <div className="mt-4">
+                <p className="text-2xl font-bold tracking-tight font-mono">
+                  <AnimatedCounter value={kpi.value} />
+                </p>
+                <p className="text-sm text-muted-foreground mt-0.5">{kpi.label}</p>
+              </div>
+            </div>
+          </Reveal>
+        ))}
       </div>
 
       {/* Website Leads Alert */}
       {newLeadsCount > 0 && (
-        <Link href="/leads">
-          <Card className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30 hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="flex items-center justify-between p-4">
+        <Reveal delay={320}>
+          <Link href="/leads">
+            <div className="card-glass rounded-2xl p-4 flex items-center justify-between cursor-pointer border-amber-200 dark:border-amber-800 hover:shadow-md transition-all duration-300 group">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
                   <Inbox className="h-5 w-5 text-amber-500" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">
-                    {newLeadsCount} new lead
-                    {newLeadsCount === 1 ? "" : "s"} from website
+                    {newLeadsCount} new lead{newLeadsCount === 1 ? "" : "s"} from website
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    Quote/site-visit requests to review
-                  </p>
+                  <p className="text-xs text-muted-foreground">Quote/site-visit requests to review</p>
                 </div>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+            </div>
+          </Link>
+        </Reveal>
       )}
 
       {/* Task Pipeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Task Pipeline</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Reveal delay={400}>
+        <div className="card-glass rounded-2xl p-6">
+          <h2 className="text-base font-bold font-display mb-4">Task Pipeline</h2>
           {openTasksList.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-sm text-muted-foreground">
-                No open tasks yet.
-              </p>
+              <p className="text-sm text-muted-foreground">No open tasks yet.</p>
               <Link href="/tasks">
-                <Button size="sm" className="mt-3">
-                  <Plus className="h-4 w-4" />
-                  Create Task
-                </Button>
+                <button className="btn-primary mt-3">
+                  <Plus className="h-4 w-4" /> Create Task
+                </button>
               </Link>
             </div>
           ) : (
@@ -735,9 +647,9 @@ export default async function DashboardPage() {
                 <Link
                   key={status}
                   href={`/tasks?status=${status}`}
-                  className="group rounded-lg border p-3 text-center transition-all hover:shadow-sm hover:border-amber-200 dark:hover:border-amber-800"
+                  className="rounded-xl border border-border/50 p-3 text-center transition-all duration-300 hover:shadow-sm hover:border-primary/20 hover:bg-primary/5"
                 >
-                  <p className="text-xl font-bold">{count as number}</p>
+                  <p className="text-xl font-bold font-mono">{count as number}</p>
                   <div className="mt-1">
                     <StatusBadge status={status} />
                   </div>
@@ -745,29 +657,28 @@ export default async function DashboardPage() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Reveal>
 
       {/* Charts */}
-      <DashboardCharts
-        tasksByStatus={statusCounts}
-        materialsByCategory={materialsByCategory}
-      />
+      <Reveal delay={480}>
+        <DashboardCharts
+          tasksByStatus={statusCounts}
+          materialsByCategory={materialsByCategory}
+        />
+      </Reveal>
 
-      {/* Bottom Grid: Alerts + Activity */}
+      {/* Bottom Grid */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Low Stock */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Low Stock</CardTitle>
-            <Link
-              href="/materials"
-              className="text-xs text-primary hover:underline"
-            >
-              View all
-            </Link>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={560}>
+          <div className="card-glass rounded-2xl p-6 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold font-display">Low Stock</h2>
+              <Link href="/materials" className="text-xs text-primary hover:underline font-medium">
+                View all
+              </Link>
+            </div>
             {lowStock.length === 0 ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                 <CheckCircle2 className="h-4 w-4 text-success" />
@@ -778,31 +689,29 @@ export default async function DashboardPage() {
                 {lowStock.slice(0, 5).map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between text-sm py-1.5 border-b border-border last:border-0"
+                    className="flex items-center justify-between text-sm py-2 border-b border-border/50 last:border-0"
                   >
                     <span className="font-medium truncate">{m.name}</span>
-                    <Badge variant="danger" className="shrink-0 ml-2">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-danger/10 text-danger">
                       {m.stockOnHand}/{m.reorderThreshold} {m.unit}
-                    </Badge>
+                    </span>
                   </div>
                 ))}
                 {lowStock.length > 5 && (
-                  <p className="text-xs text-muted-foreground pt-1">
-                    +{lowStock.length - 5} more
-                  </p>
+                  <p className="text-xs text-muted-foreground pt-1">+{lowStock.length - 5} more</p>
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
         {/* Stalled Tasks */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Stalled Tasks</CardTitle>
-            <span className="text-xs text-muted-foreground">48h+ inactive</span>
-          </CardHeader>
-          <CardContent>
+        <Reveal delay={640}>
+          <div className="card-glass rounded-2xl p-6 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold font-display">Stalled Tasks</h2>
+              <span className="text-xs text-muted-foreground font-mono">48h+ inactive</span>
+            </div>
             {stalledTasks.length === 0 ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                 <CheckCircle2 className="h-4 w-4 text-success" />
@@ -811,84 +720,58 @@ export default async function DashboardPage() {
             ) : (
               <div className="space-y-2">
                 {stalledTasks.slice(0, 5).map((t) => (
-                  <div key={t.id} className="py-1.5 border-b border-border last:border-0">
-                    <Link
-                      href={`/tasks/${t.id}`}
-                      className="text-sm font-medium hover:text-primary transition-colors"
-                    >
+                  <div key={t.id} className="py-2 border-b border-border/50 last:border-0">
+                    <Link href={`/tasks/${t.id}`} className="text-sm font-medium hover:text-primary transition-colors">
                       {t.title}
                     </Link>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {t.assignedTo?.name || "Unassigned"} ·{" "}
-                      {formatDistanceToNow(t.lastActivityAt, {
-                        addSuffix: true,
-                      })}
+                      {t.assignedTo?.name || "Unassigned"} · {formatDistanceToNow(t.lastActivityAt, { addSuffix: true })}
                     </p>
                   </div>
                 ))}
                 {stalledTasks.length > 5 && (
-                  <p className="text-xs text-muted-foreground pt-1">
-                    +{stalledTasks.length - 5} more
-                  </p>
+                  <p className="text-xs text-muted-foreground pt-1">+{stalledTasks.length - 5} more</p>
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
 
-        {/* Team & Activity */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Team Insights</CardTitle>
-            <Link
-              href="/settings"
-              className="text-xs text-primary hover:underline"
-            >
-              Manage
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between py-1.5 border-b border-border">
-              <span className="text-sm text-muted-foreground">
-                Active Members
-              </span>
-              <span className="text-sm font-semibold">{activeMembers}</span>
+        {/* Team Insights */}
+        <Reveal delay={720}>
+          <div className="card-glass rounded-2xl p-6 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold font-display">Team Insights</h2>
+              <Link href="/settings" className="text-xs text-primary hover:underline font-medium">
+                Manage
+              </Link>
             </div>
-            <div className="flex items-center justify-between py-1.5 border-b border-border">
-              <span className="text-sm text-muted-foreground">
-                Avg Task Age
-              </span>
-              <span className="text-sm font-semibold">{averageTaskAge}h</span>
+            <div className="space-y-3">
+              {[
+                { label: "Active Members", value: activeMembers },
+                { label: "Avg Task Age", value: `${averageTaskAge}h` },
+                { label: "Materials", value: `${materialsList.length} items` },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                  <span className="text-sm font-semibold font-mono">{item.value}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center justify-between py-1.5">
-              <span className="text-sm text-muted-foreground">
-                Materials
-              </span>
-              <span className="text-sm font-semibold">
-                {materialsList.length} items
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </Reveal>
       </div>
 
       {/* Activity Feed */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <Reveal delay={800}>
+        <div className="card-glass rounded-2xl p-6">
+          <h2 className="text-base font-bold font-display mb-4">Recent Activity</h2>
           {recentEvents.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No activity yet
-            </p>
+            <p className="text-sm text-muted-foreground py-4 text-center">No activity yet</p>
           ) : (
             <div className="space-y-3">
               {recentEvents.map((e: any) => (
-                <div
-                  key={e.id}
-                  className="flex items-start gap-3 text-sm"
-                >
+                <div key={e.id} className="flex items-start gap-3 text-sm">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
                     {e.actor.name?.[0] || "U"}
                   </div>
@@ -898,10 +781,7 @@ export default async function DashboardPage() {
                       <span className="text-muted-foreground">
                         {e.type.replace("_", " ").toLowerCase()} on{" "}
                       </span>
-                      <Link
-                        href={`/tasks/${e.task.id}`}
-                        className="font-medium text-primary hover:underline"
-                      >
+                      <Link href={`/tasks/${e.task.id}`} className="font-medium text-primary hover:underline">
                         {e.task.title}
                       </Link>
                     </p>
@@ -913,8 +793,8 @@ export default async function DashboardPage() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </Reveal>
     </div>
   );
 }
