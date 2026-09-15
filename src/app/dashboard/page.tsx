@@ -524,7 +524,7 @@ export default async function DashboardPage() {
       <Reveal>
         <div className="hero-gradient rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22g%22%20width%3D%2220%22%20height%3D%2220%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22rgba(255%2C255%2C255%2C0.1)%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23g)%22/%3E%3C/svg%3E')] opacity-30" />
-          <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
                 <Crown className="h-6 w-6" />
@@ -538,14 +538,14 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Link href="/tasks">
-                <button className="inline-flex items-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Link href="/tasks" className="flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
                   <Plus className="h-4 w-4" /> New Task
                 </button>
               </Link>
-              <Link href="/settings">
-                <button className="inline-flex items-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
+              <Link href="/settings" className="flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
                   <Settings className="h-4 w-4" /> Settings
                 </button>
               </Link>
