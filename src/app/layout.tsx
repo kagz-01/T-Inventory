@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import { Inter, Space_Grotesk, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { cookies } from "next/headers";
 import Providers from "@/components/Providers";
@@ -20,6 +20,11 @@ const grotesk = Space_Grotesk({
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
@@ -46,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${grotesk.variable} ${jetbrains.variable}`}>
+      <body className={`${inter.variable} ${grotesk.variable} ${jetbrains.variable} ${playfair.variable}`}>
         {/* Ambient effects */}
         <div className="gradient-bg" />
         <div className="noise-overlay" />

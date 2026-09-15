@@ -15,11 +15,15 @@ export default function AppShell({ children, isAuthenticated }: { children: Reac
     }
   }, [session?.user]);
 
+  if (!hasSidebar) {
+    return <>{children}</>;
+  }
+
   return (
     <main
       className={`min-h-screen pb-20 md:pb-0 transition-all duration-300 ${hasSidebar ? "md:pl-[240px]" : ""}`}
     >
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="w-full px-4 py-8 sm:px-6 lg:px-10 xl:px-16">
         {children}
       </div>
     </main>

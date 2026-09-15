@@ -185,18 +185,15 @@ export default async function DashboardPage() {
         <Reveal>
           <div className="hero-gradient rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22g%22%20width%3D%2220%22%20height%3D%2220%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22rgba(255%2C255%2C255%2C0.1)%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23g)%22/%3E%3C/svg%3E')] opacity-30" />
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <Zap className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-display">
-                  {greeting}, {user.name?.split(" ")[0] || "there"}
-                </h1>
-                <p className="text-white/80 text-sm mt-0.5">
-                  Let&apos;s get things done
-                </p>
-              </div>
+            <div className="relative">
+              <p className="text-white/60 text-xs font-medium tracking-widest uppercase mb-3 font-mono">Dashboard</p>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-[0.95]">
+                {greeting}, <span className="font-serif italic font-normal">{user.name?.split(" ")[0] || "there"}</span>
+              </h1>
+              <p className="text-white/70 text-sm mt-3 max-w-md">
+                Let&apos;s get things <span className="font-serif italic">done</span> today.
+              </p>
+            </div>
             </div>
           </div>
         </Reveal>
@@ -318,18 +315,15 @@ export default async function DashboardPage() {
         <Reveal>
           <div className="hero-gradient rounded-2xl p-6 md:p-8 text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cdefs%3E%3Cpattern%20id%3D%22g%22%20width%3D%2220%22%20height%3D%2220%22%20patternUnits%3D%22userSpaceOnUse%22%3E%3Ccircle%20cx%3D%221%22%20cy%3D%221%22%20r%3D%221%22%20fill%3D%22rgba(255%2C255%2C255%2C0.1)%22/%3E%3C/pattern%3E%3C/defs%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20fill%3D%22url(%23g)%22/%3E%3C/svg%3E')] opacity-30" />
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                <Shield className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight font-display">
-                  {greeting}, {user.name?.split(" ")[0] || "Manager"}
-                </h1>
-                <p className="text-white/80 text-sm mt-0.5">
-                  Here&apos;s your team&apos;s overview
-                </p>
-              </div>
+            <div className="relative">
+              <p className="text-white/60 text-xs font-medium tracking-widest uppercase mb-3 font-mono">Manager</p>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-[0.95]">
+                {greeting}, <span className="font-serif italic font-normal">{user.name?.split(" ")[0] || "Manager"}</span>
+              </h1>
+              <p className="text-white/70 text-sm mt-3 max-w-md">
+                Here&apos;s your team&apos;s <span className="font-serif italic">overview</span>
+              </p>
+            </div>
             </div>
           </div>
         </Reveal>

@@ -13,6 +13,8 @@ import {
   Layers,
   Zap,
   Shield,
+  Crown,
+  UserCheck,
 } from "lucide-react";
 
 export default async function LandingPage() {
@@ -23,7 +25,7 @@ export default async function LandingPage() {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-16 w-full items-center justify-between px-6 lg:px-10 xl:px-16">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Package className="h-4 w-4 text-primary-foreground" />
@@ -48,7 +50,7 @@ export default async function LandingPage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="relative mx-auto max-w-6xl px-6 py-24 sm:py-32 lg:py-40">
+        <div className="relative w-full px-6 py-24 sm:py-32 lg:py-40 lg:px-10 xl:px-16">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
               <Zap className="h-3 w-3 text-primary" />
@@ -81,7 +83,7 @@ export default async function LandingPage() {
 
       {/* Logos / Social proof strip */}
       <section className="border-y bg-muted/30">
-        <div className="mx-auto max-w-6xl px-6 py-8">
+        <div className="w-full px-6 py-8 lg:px-10 xl:px-16">
           <p className="text-center text-sm font-medium text-muted-foreground mb-6">
             Trusted by teams managing complex material workflows
           </p>
@@ -96,7 +98,7 @@ export default async function LandingPage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+      <section id="features" className="w-full py-24 sm:py-32 px-6 lg:px-10 xl:px-16">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Everything your team needs
@@ -107,7 +109,7 @@ export default async function LandingPage() {
           </p>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-5xl gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               icon: Layers,
@@ -164,7 +166,7 @@ export default async function LandingPage() {
 
       {/* How it works */}
       <section className="border-y bg-muted/30">
-        <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+        <div className="w-full px-6 py-24 sm:py-32 lg:px-10 xl:px-16">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Up and running in minutes
@@ -174,17 +176,17 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <div className="mx-auto mt-16 grid max-w-4xl gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 step: "1",
-                title: "Sign in",
-                description: "Google OAuth — one click, no passwords to remember.",
+                title: "Boss signs in",
+                description: "First sign-in with Google creates your organization automatically.",
               },
               {
                 step: "2",
-                title: "Add your team",
-                description: "Invite managers and field staff by email. They join in seconds.",
+                title: "Invite your team",
+                description: "Admin invites managers. Managers invite field staff. Everyone gets an email.",
               },
               {
                 step: "3",
@@ -213,18 +215,18 @@ export default async function LandingPage() {
       </section>
 
       {/* Use cases */}
-      <section className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+      <section className="w-full px-6 py-24 sm:py-32 lg:px-10 xl:px-16">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             Built for your workflow
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Whether you're sourcing branded merchandise, coordinating event materials,
+            Whether you&apos;re sourcing branded merchandise, coordinating event materials,
             or managing government tenders.
           </p>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-5xl gap-6 sm:grid-cols-3">
+        <div className="mt-16 grid gap-6 sm:grid-cols-3">
           {[
             {
               icon: Shield,
@@ -261,20 +263,99 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* How it works — Roles */}
+      <section className="border-y bg-muted/30">
+        <div className="w-full px-6 py-24 sm:py-32 lg:px-10 xl:px-16">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Built around your team
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              One platform, three roles. Everyone sees what they need — nothing more, nothing less.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-8 sm:grid-cols-3">
+            {[
+              {
+                icon: Crown,
+                title: "Boss (Admin)",
+                color: "text-amber-600 dark:text-amber-400",
+                bg: "bg-amber-50 dark:bg-amber-950/30",
+                borderColor: "border-amber-200 dark:border-amber-800",
+                steps: [
+                  "Sign in first with Google — your email is pre-registered",
+                  "Your organization is created automatically",
+                  "Invite managers by email from the Team page",
+                  "Full access to settings, billing, and all features",
+                ],
+              },
+              {
+                icon: Shield,
+                title: "Manager",
+                color: "text-blue-600 dark:text-blue-400",
+                bg: "bg-blue-50 dark:bg-blue-950/30",
+                borderColor: "border-blue-200 dark:border-blue-800",
+                steps: [
+                  "Receive an invite email from your admin",
+                  "Sign in with Google or set a password",
+                  "Invite team members and assign tasks",
+                  "Manage projects, vendors, and materials",
+                ],
+              },
+              {
+                icon: UserCheck,
+                title: "Team Member",
+                color: "text-emerald-600 dark:text-emerald-400",
+                bg: "bg-emerald-50 dark:bg-emerald-950/30",
+                borderColor: "border-emerald-200 dark:border-emerald-800",
+                steps: [
+                  "Receive an invite email from your manager",
+                  "Sign in with the password you were given",
+                  "View and update your assigned tasks",
+                  "Upload photos and track progress",
+                ],
+              },
+            ].map((role) => {
+              const Icon = role.icon;
+              return (
+                <div
+                  key={role.title}
+                  className={`rounded-xl border-2 ${role.borderColor} bg-card p-8`}
+                >
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-full ${role.bg}`}>
+                    <Icon className={`h-6 w-6 ${role.color}`} />
+                  </div>
+                  <h3 className="mt-5 text-lg font-semibold text-foreground">{role.title}</h3>
+                  <ul className="mt-4 space-y-3">
+                    {role.steps.map((step, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                        <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${role.color}`} />
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t">
-        <div className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
+        <div className="w-full px-6 py-24 sm:py-32 lg:px-10 xl:px-16">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               Ready to streamline your workflow?
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Start managing your materials and team more efficiently today. Free for small
-              teams.
+              The boss signs in first with Google to set up the organization. Then invite your
+              team — managers and employees join in seconds.
             </p>
             <div className="mt-8">
               <Link href="/login" className="btn-primary h-12 px-8 text-base">
-                Get started free
+                Boss? Sign in to get started
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -284,7 +365,7 @@ export default async function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t bg-muted/30">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row">
+        <div className="mx-auto flex w-full flex-col items-center justify-between gap-4 px-6 py-8 sm:flex-row lg:px-10 xl:px-16">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded bg-primary">
               <Package className="h-3 w-3 text-primary-foreground" />
@@ -297,7 +378,7 @@ export default async function LandingPage() {
             <a href="#" className="hover:text-foreground transition-colors">Support</a>
           </div>
           <p className="text-xs text-muted-foreground">
-            © 2026 Touchline. All rights reserved.
+            &copy; 2026 Touchline. All rights reserved.
           </p>
         </div>
       </footer>

@@ -3,27 +3,27 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── Light Mode (Default) ── */
+  /* ── Light Mode (Default) — Warm Cream + Gold ── */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    --background: 40 30% 96%;
+    --foreground: 30 20% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 30 20% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 238.7 83.5% 66.7%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 238.7 83.5% 66.7%;
+    --popover-foreground: 30 20% 8%;
+    --primary: 38 92% 43%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 20% 94%;
+    --secondary-foreground: 30 15% 15%;
+    --muted: 40 20% 94%;
+    --muted-foreground: 30 10% 45%;
+    --accent: 40 20% 94%;
+    --accent-foreground: 30 15% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 38 30% 88%;
+    --input: 38 30% 88%;
+    --ring: 38 92% 43%;
     --radius: 0.625rem;
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -33,87 +33,93 @@
     --danger-foreground: 0 0% 100%;
 
     /* Premium tokens */
-    --bg-soft: 220 14% 97%;
-    --shadow: 224 71.4% 4.1%;
-    --gradient-hero-from: 238.7 83.5% 66.7%;
-    --gradient-hero-via: 250 80% 60%;
-    --gradient-hero-to: 270 70% 55%;
+    --bg-soft: 40 25% 93%;
+    --shadow: 30 20% 8%;
+    --gradient-hero-from: 38 92% 43%;
+    --gradient-hero-via: 43 80% 50%;
+    --gradient-hero-to: 48 70% 55%;
+    --surface: 0 0% 100%;
+    --surface-soft: 40 20% 97%;
+    --border-subtle: 38 20% 90%;
   }
 
-  /* ── Dark Mode ── */
+  /* ── Dark Mode — Warm Dark ── */
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 238.7 83.5% 66.7%;
-    --primary-foreground: 224 71.4% 4.1%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 238.7 83.5% 66.7%;
+    --background: 30 15% 6%;
+    --foreground: 40 20% 95%;
+    --card: 30 15% 8%;
+    --card-foreground: 40 20% 95%;
+    --popover: 30 15% 8%;
+    --popover-foreground: 40 20% 95%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 30 15% 8%;
+    --secondary: 30 12% 14%;
+    --secondary-foreground: 40 20% 95%;
+    --muted: 30 12% 14%;
+    --muted-foreground: 30 10% 60%;
+    --accent: 30 12% 14%;
+    --accent-foreground: 40 20% 95%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 12% 16%;
+    --input: 30 12% 16%;
+    --ring: 38 92% 50%;
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --danger: 0 62.8% 30.6%;
+    --danger: 0 62% 40%;
     --danger-foreground: 0 0% 100%;
 
     /* Premium tokens (dark) */
-    --bg-soft: 224 71.4% 6%;
+    --bg-soft: 30 12% 10%;
     --shadow: 0 0% 0%;
-    --gradient-hero-from: 238.7 83.5% 66.7%;
-    --gradient-hero-via: 250 80% 60%;
-    --gradient-hero-to: 270 70% 55%;
+    --gradient-hero-from: 38 92% 50%;
+    --gradient-hero-via: 43 80% 55%;
+    --gradient-hero-to: 48 70% 60%;
+    --surface: 30 15% 10%;
+    --surface-soft: 30 12% 12%;
+    --border-subtle: 30 10% 18%;
   }
 
   /* ── Role-based themes (Light) ── */
-  /* Admin: Gold/Amber premium */
+  /* Admin: Rich Gold — warm, executive */
   [data-role="ADMIN"] {
-    --primary: 38 92% 50%;
-    --ring: 38 92% 50%;
-    --gradient-hero-from: 38 92% 50%;
-    --gradient-hero-via: 43 96% 56%;
-    --gradient-hero-to: 48 96% 68%;
+    --primary: 38 92% 43%;
+    --ring: 38 92% 43%;
+    --gradient-hero-from: 38 92% 43%;
+    --gradient-hero-via: 43 80% 50%;
+    --gradient-hero-to: 48 70% 55%;
   }
   .dark [data-role="ADMIN"] {
     --primary: 38 92% 50%;
     --ring: 38 92% 50%;
   }
 
-  /* Manager: Blue professional */
+  /* Manager: Steel Blue — professional, focused */
   [data-role="MANAGER"] {
-    --primary: 221 83% 53%;
-    --ring: 221 83% 53%;
-    --gradient-hero-from: 221 83% 53%;
-    --gradient-hero-via: 213 94% 60%;
-    --gradient-hero-to: 199 89% 68%;
+    --primary: 210 65% 42%;
+    --ring: 210 65% 42%;
+    --gradient-hero-from: 210 65% 42%;
+    --gradient-hero-via: 200 55% 48%;
+    --gradient-hero-to: 190 50% 55%;
   }
   .dark [data-role="MANAGER"] {
-    --primary: 221 83% 53%;
-    --ring: 221 83% 53%;
+    --primary: 210 65% 50%;
+    --ring: 210 65% 50%;
   }
 
-  /* Employee: Emerald clean */
+  /* Employee: Muted Teal — clean, minimal */
   [data-role="EMPLOYEE"] {
-    --primary: 160 84% 39%;
-    --ring: 160 84% 39%;
-    --gradient-hero-from: 160 84% 39%;
-    --gradient-hero-via: 152 69% 45%;
-    --gradient-hero-to: 137 55% 50%;
+    --primary: 160 45% 35%;
+    --ring: 160 45% 35%;
+    --gradient-hero-from: 160 45% 35%;
+    --gradient-hero-via: 150 40% 40%;
+    --gradient-hero-to: 140 35% 45%;
   }
   .dark [data-role="EMPLOYEE"] {
-    --primary: 160 84% 39%;
-    --ring: 160 84% 39%;
+    --primary: 160 45% 45%;
+    --ring: 160 45% 45%;
   }
 
   * {
@@ -130,7 +136,7 @@
    AMBIENT EFFECTS
    ══════════════════════════════════════════════════ */
 
-/* Animated gradient background */
+/* Animated gradient background — warm cream */
 .gradient-bg {
   position: fixed;
   inset: 0;
@@ -139,7 +145,7 @@
     135deg,
     hsl(var(--background)) 0%,
     hsl(var(--bg-soft)) 25%,
-    hsl(var(--primary) / 0.04) 50%,
+    hsl(var(--primary) / 0.03) 50%,
     hsl(var(--bg-soft)) 75%,
     hsl(var(--background)) 100%
   );
@@ -153,7 +159,7 @@
     135deg,
     hsl(var(--background)) 0%,
     hsl(var(--bg-soft)) 25%,
-    hsl(var(--primary) / 0.06) 50%,
+    hsl(var(--primary) / 0.05) 50%,
     hsl(var(--bg-soft)) 75%,
     hsl(var(--background)) 100%
   );
@@ -166,24 +172,11 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  opacity: 0.03;
+  opacity: 0.025;
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 256px 256px;
-}
-
-@keyframes grain {
-  0%, 100% { transform: translate(0, 0); }
-  10% { transform: translate(-5%, -10%); }
-  20% { transform: translate(-15%, 5%); }
-  30% { transform: translate(7%, -25%); }
-  40% { transform: translate(-5%, 25%); }
-  50% { transform: translate(-15%, 10%); }
-  60% { transform: translate(15%, 0%); }
-  70% { transform: translate(0%, 15%); }
-  80% { transform: translate(3%, 35%); }
-  90% { transform: translate(-10%, 10%); }
 }
 
 @keyframes gradient-shift {
@@ -251,7 +244,7 @@
     text-wrap: balance;
   }
 
-  /* Gradient text */
+  /* Gradient text — warm gold */
   .grad-text {
     background: linear-gradient(135deg, hsl(var(--gradient-hero-from)), hsl(var(--gradient-hero-via)), hsl(var(--gradient-hero-to)));
     -webkit-background-clip: text;
@@ -263,6 +256,12 @@
   .glow-accent {
     animation: glow-pulse 4s ease-in-out infinite;
   }
+
+  /* Italic accent word — editorial style */
+  .accent-word {
+    font-style: italic;
+    color: hsl(var(--primary));
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -270,57 +269,61 @@
    ══════════════════════════════════════════════════ */
 
 @layer components {
-  /* Standard card */
+  /* Standard card — warm shadows */
   .card {
-    @apply rounded-xl border bg-card text-card-foreground shadow-sm;
+    @apply rounded-xl bg-card text-card-foreground;
+    border: 1px solid hsl(var(--border-subtle));
+    box-shadow: 0 1px 3px hsl(var(--shadow) / 0.04);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card:hover {
-    border-color: hsl(var(--primary) / 0.2);
+    border-color: hsl(var(--primary) / 0.15);
     box-shadow: 0 4px 12px hsl(var(--shadow) / 0.06), 0 0 0 1px hsl(var(--primary) / 0.05);
   }
 
-  /* Glass card */
+  /* Glass card — warm glassmorphism */
   .card-glass {
-    background: hsl(var(--card) / 0.7);
+    background: hsl(var(--surface) / 0.8);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: 0 4px 24px hsl(var(--shadow) / 0.06), inset 0 1px 0 hsl(var(--card) / 0.5);
+    border: 1px solid hsl(var(--border-subtle) / 0.6);
+    box-shadow: 0 4px 24px hsl(var(--shadow) / 0.04), inset 0 1px 0 hsl(var(--surface) / 0.5);
     border-radius: var(--radius);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card-glass:hover {
     transform: translateY(-2px);
-    border-color: hsl(var(--primary) / 0.2);
-    box-shadow: 0 8px 32px hsl(var(--shadow) / 0.1), 0 0 0 1px hsl(var(--primary) / 0.08);
+    border-color: hsl(var(--primary) / 0.15);
+    box-shadow: 0 8px 32px hsl(var(--shadow) / 0.08), 0 0 0 1px hsl(var(--primary) / 0.06);
   }
 
-  /* Glass nav */
+  /* Glass nav — warm frosted */
   .glass-nav {
-    background: hsl(var(--background) / 0.8);
+    background: hsl(var(--background) / 0.85);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid hsl(var(--border) / 0.5);
+    border-bottom: 1px solid hsl(var(--border-subtle) / 0.5);
   }
 
-  /* Gradient hero header */
+  /* Gradient hero header — warm gold */
   .hero-gradient {
     background: linear-gradient(135deg, hsl(var(--gradient-hero-from)), hsl(var(--gradient-hero-via)), hsl(var(--gradient-hero-to)));
+    color: white;
   }
 
   /* Buttons */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px hsl(var(--primary) / 0.2);
   }
 
   .btn-primary:hover {
     opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsl(var(--primary) / 0.3);
+    box-shadow: 0 4px 12px hsl(var(--primary) / 0.25);
   }
 
   .btn-primary:active {
@@ -333,13 +336,13 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground shadow-sm;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border bg-secondary px-4 py-2.5 text-sm font-medium text-secondary-foreground;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .btn-secondary:hover {
     background: hsl(var(--secondary) / 0.8);
-    box-shadow: 0 2px 8px hsl(var(--shadow) / 0.08);
+    box-shadow: 0 2px 8px hsl(var(--shadow) / 0.06);
   }
 
   .btn-ghost {
@@ -353,14 +356,15 @@
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground shadow-sm;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 3px hsl(var(--destructive) / 0.2);
   }
 
   .btn-danger:hover {
     opacity: 0.9;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px hsl(var(--destructive) / 0.3);
+    box-shadow: 0 4px 12px hsl(var(--destructive) / 0.25);
   }
 
   .btn-danger:active {
@@ -371,11 +375,12 @@
   .input {
     @apply flex h-10 w-full rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border-color: hsl(var(--border-subtle));
   }
 
   .input:focus {
     border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
   }
 
   /* Badges */
@@ -408,7 +413,7 @@
     @apply card-glass rounded-xl p-5;
   }
 
-  /* Sidebar active item */
+  /* Sidebar active item — warm gold accent */
   .nav-active {
     @apply bg-primary/10 text-primary font-medium;
     position: relative;
@@ -426,7 +431,7 @@
     background: hsl(var(--primary));
   }
 
-  /* Progress bar */
+  /* Progress bar — warm gradient */
   .progress-bar {
     @apply h-2 w-full rounded-full bg-muted overflow-hidden;
   }
