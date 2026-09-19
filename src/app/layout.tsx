@@ -29,9 +29,16 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Touchline Inventory",
-  description: "Materials sourcing & inventory management for branding and signage work",
+  description: "Track. Manage. Stay Ahead. — Materials sourcing & inventory management for signage and branding.",
   manifest: "/manifest.json",
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
   metadataBase: new URL("https://app.touchlineltd.co.ke"),
 };
 

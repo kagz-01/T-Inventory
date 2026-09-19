@@ -1,7 +1,7 @@
 {
-  "name": "Touchline",
+  "name": "Touchline Inventory",
   "short_name": "Touchline",
-  "description": "Materials sourcing & inventory management for branding and signage work",
+  "description": "Track. Manage. Stay Ahead. — Materials sourcing & inventory management for signage and branding.",
   "start_url": "/dashboard",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -11,6 +11,7 @@
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
   ]
 }
