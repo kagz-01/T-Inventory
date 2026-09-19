@@ -2,40 +2,13 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { Package, AlertCircle, Mail, Lock, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Suspense } from "react";
+import { Package, AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 function LoginCard() {
   const params = useSearchParams();
   const denied = params.get("error") === "AccessDenied";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function handleCredentialsLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    const res = await signIn("credentials", {
-      email,
-      password,
-      callbackUrl: "/dashboard",
-      redirect: false,
-    });
-    setLoading(false);
-    if (res?.error) {
-      setError("Invalid email or password");
-    } else if (res?.url) {
-      window.location.href = res.url;
-    }
-  }
-
-  function handleGoogleLogin() {
-    signIn("google", { callbackUrl: "/dashboard" });
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -51,9 +24,9 @@ function LoginCard() {
         {/* Card */}
         <div className="card-glass rounded-2xl p-6 animate-fade-in-up border-2 border-border">
           <div className="text-center mb-6">
-            <h1 className="text-xl font-bold font-display">Sign in to your account</h1>
+            <h1 className="text-xl font-bold font-display">Sign in as Admin</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Boss? Use Google. Team member? Use your email & password.
+              Use your Google account to sign in.
             </p>
           </div>
 
@@ -61,24 +34,17 @@ function LoginCard() {
             <div className="mb-5 flex gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm">
               <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
               <div>
-                <p className="font-medium">You haven&apos;t been invited yet</p>
+                <p className="font-medium">Access denied</p>
                 <p className="text-muted-foreground mt-0.5">
-                  Ask your admin for an invitation, then try again.
+                  Your account is not authorized. Contact your admin.
                 </p>
               </div>
             </div>
           )}
 
-          {error && (
-            <div className="mb-5 flex gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm">
-              <AlertCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
-              <p className="font-medium">{error}</p>
-            </div>
-          )}
-
           {/* Google sign-in */}
           <button
-            onClick={handleGoogleLogin}
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
             className="flex w-full items-center justify-center gap-3 rounded-lg border border-border/50 bg-background px-4 py-2.5 text-sm font-medium shadow-sm transition-all duration-300 hover:bg-accent hover:shadow-md hover:border-border active:scale-[0.98]"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -89,42 +55,6 @@ function LoginCard() {
             </svg>
             Continue with Google
           </button>
-
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground font-medium">or sign in with password</span>
-            </div>
-          </div>
-
-          {/* Password form */}
-          <form onSubmit={handleCredentialsLogin} className="space-y-3">
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-9"
-                required
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-9"
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
-            </Button>
-          </form>
         </div>
 
         {/* Helper text */}
@@ -133,10 +63,10 @@ function LoginCard() {
             This platform is invite-only.
           </p>
           <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Boss?</span> Your email is pre-registered — just click Google sign-in.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Team member?</span> Ask your admin for an invite, then use the password form.
+            <span className="font-medium text-foreground">Team member?</span>{" "}
+            <Link href="/login/team" className="underline underline-offset-2 hover:text-foreground transition-colors">
+              Sign in with email & password
+            </Link>
           </p>
         </div>
       </div>
