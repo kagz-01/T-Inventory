@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { purchaseOrderSchema } from "@/lib/validation";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const user = await requireOrgUser();
@@ -51,6 +52,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .eq("id", params.id)
     .select("*, supplier:vendors(id, name)")
     .maybeSingle();
+
+  if (po) {
+    const event = parsed.data.status ? "PO_STATUS_CHANGED" : "PO_UPDATED";
+    logActivity({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      eventType: event,
+      entityType: "purchase_order",
+      entityId: po.id,
+      metadata: { status: parsed.data.status },
+    });
+  }
 
   return NextResponse.json(po);
 }

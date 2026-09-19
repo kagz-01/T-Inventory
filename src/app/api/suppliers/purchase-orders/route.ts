@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { purchaseOrderSchema } from "@/lib/validation";
 import { randomUUID } from "crypto";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(req: NextRequest) {
   const user = await requireOrgUser();
@@ -46,6 +47,17 @@ export async function POST(req: NextRequest) {
     })
     .select("*, supplier:vendors(id, name)")
     .maybeSingle();
+
+  if (po) {
+    logActivity({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      eventType: "PO_CREATED",
+      entityType: "purchase_order",
+      entityId: po.id,
+      metadata: { name: `PO for ${parsed.data.supplierId}` },
+    });
+  }
 
   return NextResponse.json(po, { status: 201 });
 }

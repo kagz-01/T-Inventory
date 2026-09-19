@@ -495,6 +495,20 @@ CREATE TABLE IF NOT EXISTS production_materials (
 );
 CREATE INDEX IF NOT EXISTS idx_prod_materials_job ON production_materials(productionJobId);
 
+CREATE TABLE IF NOT EXISTS production_steps (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  productionJobId TEXT NOT NULL REFERENCES production_jobs(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  status TEXT DEFAULT 'PENDING' CHECK (status IN ('PENDING','IN_PROGRESS','COMPLETED')),
+  assignedToId TEXT REFERENCES users(id),
+  completedAt TIMESTAMPTZ,
+  sort_order INT DEFAULT 0,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  createdAt TIMESTAMPTZ DEFAULT now(),
+  updatedAt TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_prod_steps_job ON production_steps(productionJobId);
+
 -- =============================================================================
 -- PHASE 3 — Purchase Orders + Quotations
 -- =============================================================================

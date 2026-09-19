@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { customerOrderSchema } from "@/lib/validation";
 import { randomUUID } from "crypto";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(req: NextRequest) {
   const user = await requireOrgUser();
@@ -48,6 +49,17 @@ export async function POST(req: NextRequest) {
     })
     .select()
     .maybeSingle();
+
+  if (order) {
+    logActivity({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      eventType: "ORDER_CREATED",
+      entityType: "customer_order",
+      entityId: order.id,
+      metadata: { name: parsed.data.customerName, orderType: parsed.data.orderType },
+    });
+  }
 
   return NextResponse.json(order, { status: 201 });
 }

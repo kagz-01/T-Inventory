@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReportsNav from "@/components/ReportsNav";
+import { exportToCSV } from "@/lib/csv";
 import {
   Users,
   UserCheck,
@@ -11,6 +12,7 @@ import {
   XCircle,
   Clock,
   BarChart3,
+  Download,
 } from "lucide-react";
 
 type Member = {
@@ -125,11 +127,24 @@ export default function EmployeesReportPage() {
       <ReportsNav />
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Employees Report</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Team overview, attendance, and performance
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Employees Report</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Team overview, attendance, and performance
+          </p>
+        </div>
+        <button
+          onClick={() => exportToCSV(members.map((m) => ({
+            Name: m.name,
+            Email: m.email,
+            Role: m.role,
+            Active: m.active ? "Yes" : "No",
+          })), "employees-report.csv")}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </button>
       </div>
 
       {/* Summary Cards */}

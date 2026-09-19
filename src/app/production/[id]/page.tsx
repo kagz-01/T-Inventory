@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
+import ProductionSteps from "@/components/ProductionSteps";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
@@ -301,6 +302,8 @@ export default async function ProductionJobDetailPage({
           )}
         </div>
       </Reveal>
+
+      <ProductionSteps jobId={job.id} />
     </div>
   );
 }

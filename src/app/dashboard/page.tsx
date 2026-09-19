@@ -25,6 +25,9 @@ import {
   Shield,
   Zap,
   TrendingUp,
+  ClipboardList,
+  Truck,
+  Hammer,
 } from "lucide-react";
 
 const STALL_HOURS = 48;
@@ -114,6 +117,35 @@ export default async function DashboardPage() {
     .order("createdAt", { ascending: false })
     .limit(10);
 
+  const ordersP = isEmployee
+    ? Promise.resolve({ data: [] })
+    : supabaseAdmin
+        .from("customer_orders")
+        .select("id, customerName, status, orderType, quotedAmount, createdAt")
+        .eq("organizationId", organizationId)
+        .order("createdAt", { ascending: false })
+        .limit(10);
+
+  const productionP = isEmployee
+    ? Promise.resolve({ data: [] })
+    : supabaseAdmin
+        .from("production_jobs")
+        .select("id, title, status, assignedTo:users(id, name), dueDate")
+        .eq("organizationId", organizationId)
+        .in("status", ["QUEUED", "IN_PROGRESS"])
+        .order("dueDate", { ascending: true })
+        .limit(10);
+
+  const onlineP = isEmployee
+    ? Promise.resolve({ data: [] })
+    : supabaseAdmin
+        .from("attendance")
+        .select("userId, user:users(id, name, image)")
+        .eq("organizationId", organizationId)
+        .eq("date", new Date().toISOString().split("T")[0])
+        .not("clockIn", "is", null)
+        .is("clockOut", null);
+
   const [
     { data: materials },
     { data: openTasks },
@@ -121,6 +153,9 @@ export default async function DashboardPage() {
     membersRes,
     invitesRes,
     activityRes,
+    ordersRes,
+    productionRes,
+    onlineRes,
   ] = await Promise.all([
     materialsP,
     tasksP,
@@ -128,9 +163,16 @@ export default async function DashboardPage() {
     membersP,
     invitesP,
     activityP,
+    ordersP,
+    productionP,
+    onlineP,
   ]);
 
   const activityEvents = (activityRes as any).data ?? [];
+
+  const ordersList = (ordersRes as any).data ?? [];
+  const productionList = (productionRes as any).data ?? [];
+  const onlineList = (onlineRes as any).data ?? [];
 
   const materialsList = materials ?? [];
   const openTasksList = openTasks ?? [];
@@ -547,15 +589,25 @@ export default async function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Link href="/tasks" className="flex-1 sm:flex-none">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
-                  <Plus className="h-4 w-4" /> New Task
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto">
+              <Link href="/orders" className="flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-3 py-2 text-xs font-medium hover:bg-white/30 transition-all duration-300">
+                  <ClipboardList className="h-3.5 w-3.5" /> New Order
                 </button>
               </Link>
-              <Link href="/settings" className="flex-1 sm:flex-none">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-medium hover:bg-white/30 transition-all duration-300">
-                  <Settings className="h-4 w-4" /> Settings
+              <Link href="/suppliers/purchase-orders" className="flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-3 py-2 text-xs font-medium hover:bg-white/30 transition-all duration-300">
+                  <Truck className="h-3.5 w-3.5" /> New PO
+                </button>
+              </Link>
+              <Link href="/materials" className="flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-3 py-2 text-xs font-medium hover:bg-white/30 transition-all duration-300">
+                  <Package className="h-3.5 w-3.5" /> Add Material
+                </button>
+              </Link>
+              <Link href="/production" className="flex-1 sm:flex-none">
+                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-white/20 backdrop-blur-sm px-3 py-2 text-xs font-medium hover:bg-white/30 transition-all duration-300">
+                  <Hammer className="h-3.5 w-3.5" /> New Job
                 </button>
               </Link>
             </div>
@@ -608,6 +660,87 @@ export default async function DashboardPage() {
           </Reveal>
         ))}
       </div>
+
+      {/* Orders Pipeline */}
+      <Reveal delay={320}>
+        <div className="card-glass rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold font-display">Orders Pipeline</h2>
+            <Link href="/orders" className="text-xs text-primary hover:underline font-medium">View all</Link>
+          </div>
+          {ordersList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No orders yet</p>
+          ) : (
+            <div className="space-y-2">
+              {ordersList.slice(0, 5).map((o: any) => (
+                <Link key={o.id} href={`/orders/${o.id}`} className="flex items-center justify-between text-sm py-2 border-b border-border/50 last:border-0 hover:text-primary transition-colors">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{o.customerName}</p>
+                    <p className="text-xs text-muted-foreground">{o.orderType}</p>
+                  </div>
+                  <StatusBadge status={o.status} />
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </Reveal>
+
+      {/* Production Overview */}
+      <Reveal delay={400}>
+        <div className="card-glass rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold font-display">Production Overview</h2>
+            <Link href="/production" className="text-xs text-primary hover:underline font-medium">View all</Link>
+          </div>
+          {productionList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No jobs in progress</p>
+          ) : (
+            <div className="space-y-2">
+              {productionList.slice(0, 5).map((j: any) => (
+                <div key={j.id} className="flex items-center justify-between text-sm py-2 border-b border-border/50 last:border-0">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{j.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {j.assignedTo?.name || "Unassigned"}
+                      {j.dueDate && ` · Due ${formatDistanceToNow(j.dueDate, { addSuffix: true })}`}
+                    </p>
+                  </div>
+                  <StatusBadge status={j.status} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Reveal>
+
+      {/* Who's Online */}
+      <Reveal delay={480}>
+        <div className="card-glass rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-bold font-display">Who&apos;s Online</h2>
+            <span className="text-xs text-muted-foreground font-mono">{onlineList.length} online</span>
+          </div>
+          {onlineList.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No one currently clocked in</p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {onlineList.map((entry: any) => (
+                <div key={entry.userId} className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2">
+                  {entry.user?.image ? (
+                    <img src={entry.user.image} alt={entry.user.name || "User"} className="h-6 w-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-medium">
+                      {entry.user?.name?.[0] || "U"}
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">{entry.user?.name || "Unknown"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Reveal>
 
       {/* Website Leads Alert */}
       {newLeadsCount > 0 && (

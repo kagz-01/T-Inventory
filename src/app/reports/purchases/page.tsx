@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReportsNav from "@/components/ReportsNav";
+import { exportToCSV } from "@/lib/csv";
 import {
   DollarSign,
   Clock,
@@ -12,6 +13,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   BarChart3,
+  Download,
 } from "lucide-react";
 
 type PurchaseOrder = {
@@ -125,11 +127,25 @@ export default function PurchasesReportPage() {
       <ReportsNav />
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Purchases Report</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {purchaseOrders.length} total purchase orders across all statuses
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Purchases Report</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {purchaseOrders.length} total purchase orders across all statuses
+          </p>
+        </div>
+        <button
+          onClick={() => exportToCSV(purchaseOrders.map((po) => ({
+            Supplier: po.supplier?.name ?? "",
+            Status: po.status,
+            "Total Estimate": po.totalEstimate ?? "",
+            "Expected Date": po.expectedDate ?? "",
+            "Created At": po.createdAt,
+          })), "purchase-orders-report.csv")}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </button>
       </div>
 
       {/* Summary Cards */}

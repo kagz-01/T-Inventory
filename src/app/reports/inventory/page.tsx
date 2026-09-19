@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ReportsNav from "@/components/ReportsNav";
+import { exportToCSV } from "@/lib/csv";
 import { Package, AlertTriangle, TrendingDown, Download } from "lucide-react";
 
 interface Material {
@@ -94,10 +95,6 @@ export default function InventoryReportPage() {
     },
   ];
 
-  function handleExport() {
-    console.log("Export inventory report:", data);
-  }
-
   return (
     <div className="space-y-6">
       <ReportsNav />
@@ -112,11 +109,18 @@ export default function InventoryReportPage() {
           </p>
         </div>
         <button
-          onClick={handleExport}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          onClick={() => exportToCSV(data.materials.map((m) => ({
+            Name: m.name,
+            Category: m.category,
+            "Stock on Hand": m.stockOnHand,
+            "Reorder Threshold": m.reorderThreshold,
+            "Cost per Unit": m.costPerUnit,
+            Unit: m.unit,
+            "Stock Value": m.stockOnHand * (m.costPerUnit || 0),
+          })), "inventory-report.csv")}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted transition-colors"
         >
-          <Download className="h-4 w-4" />
-          Export
+          <Download className="h-4 w-4" /> Export CSV
         </button>
       </div>
 

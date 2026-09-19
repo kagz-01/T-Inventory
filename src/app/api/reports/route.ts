@@ -142,6 +142,36 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    case "profit": {
+      const [{ data: orders }, { data: pos }, { data: materials }] = await Promise.all([
+        supabaseAdmin.from("customer_orders").select("*").eq("organizationId", orgId),
+        supabaseAdmin.from("purchase_orders").select("*").eq("organizationId", orgId),
+        supabaseAdmin.from("materials").select("*").eq("organizationId", orgId),
+      ]);
+
+      const orderList = orders ?? [];
+      const poList = pos ?? [];
+      const materialList = materials ?? [];
+
+      const totalRevenue = orderList.reduce((sum, o) => sum + (o.quotedAmount || 0), 0);
+      const totalPOCost = poList.reduce((sum, po) => sum + (po.totalEstimate || 0), 0);
+      const totalMaterialCost = materialList.reduce((sum, m) => sum + (m.stockOnHand * (m.costPerUnit || 0)), 0);
+      const totalCost = totalPOCost + totalMaterialCost;
+      const grossProfit = totalRevenue - totalCost;
+      const margin = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0;
+
+      return NextResponse.json({
+        totalRevenue,
+        totalCost,
+        totalPOCost,
+        totalMaterialCost,
+        grossProfit,
+        margin,
+        ordersCount: orderList.length,
+        poCount: poList.length,
+      });
+    }
+
     default:
       return NextResponse.json({ error: "Invalid report type" }, { status: 400 });
   }

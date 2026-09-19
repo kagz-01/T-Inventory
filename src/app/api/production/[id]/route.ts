@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { productionJobSchema } from "@/lib/validation";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const user = await requireOrgUser();
@@ -56,6 +57,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     .eq("id", params.id)
     .select("*, assignedTo:users(id, name), customerOrder:customer_orders(id, customerName, orderNumber)")
     .maybeSingle();
+
+  if (job) {
+    const event = parsed.data.status ? "JOB_STATUS_CHANGED" : "JOB_UPDATED";
+    logActivity({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      eventType: event,
+      entityType: "production_job",
+      entityId: job.id,
+      metadata: { name: job.title, status: parsed.data.status },
+    });
+  }
 
   return NextResponse.json(job);
 }

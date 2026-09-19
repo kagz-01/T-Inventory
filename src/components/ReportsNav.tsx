@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, ShoppingCart, DollarSign, Hammer, Users, LayoutDashboard } from "lucide-react";
+import { Package, ShoppingCart, DollarSign, Hammer, Users, LayoutDashboard, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const reports = [
@@ -12,6 +12,7 @@ const reports = [
   { href: "/reports/sales", label: "Sales", icon: DollarSign },
   { href: "/reports/production", label: "Production", icon: Hammer },
   { href: "/reports/employees", label: "Employees", icon: Users },
+  { href: "/reports/profit", label: "Profit", icon: TrendingUp },
 ];
 
 export default function ReportsNav() {

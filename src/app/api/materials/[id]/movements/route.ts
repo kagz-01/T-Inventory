@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { stockMovementSchema } from "@/lib/validation";
 import { randomUUID } from "crypto";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(
   req: NextRequest,
@@ -100,6 +101,17 @@ export async function POST(
     .from("materials")
     .update({ stockOnHand: newStock, updatedAt: new Date().toISOString() })
     .eq("id", params.id);
+
+  if (movement) {
+    logActivity({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      eventType: `STOCK_${type}`,
+      entityType: "stock_movement",
+      entityId: movement.id,
+      metadata: { materialName: material.name, quantity, type },
+    });
+  }
 
   return NextResponse.json(movement, { status: 201 });
 }

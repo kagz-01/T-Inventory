@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { productionJobSchema } from "@/lib/validation";
 import { randomUUID } from "crypto";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(req: NextRequest) {
   const user = await requireOrgUser();
@@ -46,6 +47,17 @@ export async function POST(req: NextRequest) {
     })
     .select("*, assignedTo:users(id, name), customerOrder:customer_orders(id, customerName, orderNumber)")
     .maybeSingle();
+
+  if (job) {
+    logActivity({
+      organizationId: user.organizationId,
+      actorId: user.id,
+      eventType: "JOB_CREATED",
+      entityType: "production_job",
+      entityId: job.id,
+      metadata: { name: parsed.data.title },
+    });
+  }
 
   return NextResponse.json(job, { status: 201 });
 }

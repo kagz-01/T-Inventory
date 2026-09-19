@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireOrgUser } from "@/lib/permissions";
 import { randomUUID } from "crypto";
+import { logActivity } from "@/lib/activity";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await requireOrgUser();
@@ -30,6 +31,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       .eq("id", existing.id)
       .select("*, user:users(id, name, image)")
       .maybeSingle();
+    if (record) {
+      logActivity({ organizationId: user.organizationId, actorId: user.id, eventType: "CLOCKED_IN", entityType: "attendance", entityId: record.id });
+    }
     return NextResponse.json(record);
   }
 
@@ -45,6 +49,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     })
     .select("*, user:users(id, name, image)")
     .maybeSingle();
+
+  if (record) {
+    logActivity({ organizationId: user.organizationId, actorId: user.id, eventType: "CLOCKED_IN", entityType: "attendance", entityId: record.id });
+  }
 
   return NextResponse.json(record, { status: 201 });
 }
