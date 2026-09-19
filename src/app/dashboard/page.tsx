@@ -107,19 +107,30 @@ export default async function DashboardPage() {
         .eq("organizationId", organizationId)
         .eq("status", "PENDING");
 
+  const activityP = supabaseAdmin
+    .from("activity_events")
+    .select("*, actor:users(id, name, image)")
+    .eq("organizationId", organizationId)
+    .order("createdAt", { ascending: false })
+    .limit(10);
+
   const [
     { data: materials },
     { data: openTasks },
     leadsRes,
     membersRes,
     invitesRes,
+    activityRes,
   ] = await Promise.all([
     materialsP,
     tasksP,
     leadsP,
     membersP,
     invitesP,
+    activityP,
   ]);
+
+  const activityEvents = (activityRes as any).data ?? [];
 
   const materialsList = materials ?? [];
   const openTasksList = openTasks ?? [];
@@ -758,24 +769,30 @@ export default async function DashboardPage() {
       <Reveal delay={800}>
         <div className="card-glass rounded-2xl p-6">
           <h2 className="text-base font-bold font-display mb-4">Recent Activity</h2>
-          {recentEvents.length === 0 ? (
+          {activityEvents.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">No activity yet</p>
           ) : (
             <div className="space-y-3">
-              {recentEvents.map((e: any) => (
+              {activityEvents.map((e: any) => (
                 <div key={e.id} className="flex items-start gap-3 text-sm">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                    {e.actor.name?.[0] || "U"}
-                  </div>
+                  {e.actor?.image ? (
+                    <img
+                      src={e.actor.image}
+                      alt={e.actor.name || "User"}
+                      className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                      {e.actor?.name?.[0] || "U"}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p>
-                      <span className="font-medium">{e.actor.name}</span>{" "}
+                      <span className="font-medium">{e.actor?.name || "Someone"}</span>{" "}
                       <span className="text-muted-foreground">
-                        {e.type.replace("_", " ").toLowerCase()} on{" "}
+                        {e.eventType?.replace(/_/g, " ").toLowerCase() || "did something"}
+                        {e.metadata?.name ? `: ${e.metadata.name}` : ""}
                       </span>
-                      <Link href={`/tasks/${e.task.id}`} className="font-medium text-primary hover:underline">
-                        {e.task.title}
-                      </Link>
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {formatDistanceToNow(e.createdAt, { addSuffix: true })}

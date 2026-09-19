@@ -177,3 +177,20 @@ export const quotationSchema = z.object({
   notes: z.string().optional(),
   status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "EXPIRED"]).optional(),
 });
+
+export const attendanceSchema = z.object({
+  userId: z.string().min(1),
+  date: z.string().min(1),
+  clockIn: z.string().optional(),
+  clockOut: z.string().optional(),
+  status: z.enum(["PRESENT", "ABSENT", "HALF_DAY", "LEAVE"]).optional(),
+  notes: z.string().optional(),
+});
+
+export const clockInSchema = z.object({
+  notes: z.string().optional(),
+});
+
+export const clockOutSchema = z.object({
+  notes: z.string().optional(),
+});
