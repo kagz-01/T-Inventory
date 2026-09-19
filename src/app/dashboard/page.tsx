@@ -194,7 +194,6 @@ export default async function DashboardPage() {
                 Let&apos;s get things <span className="font-serif italic">done</span> today.
               </p>
             </div>
-            </div>
           </div>
         </Reveal>
 
@@ -323,7 +322,6 @@ export default async function DashboardPage() {
               <p className="text-white/70 text-sm mt-3 max-w-md">
                 Here&apos;s your team&apos;s <span className="font-serif italic">overview</span>
               </p>
-            </div>
             </div>
           </div>
         </Reveal>
