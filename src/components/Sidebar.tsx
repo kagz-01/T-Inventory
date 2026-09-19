@@ -18,6 +18,7 @@ import {
   Search,
   ClipboardList,
   Hammer,
+  BarChart3,
   Crown,
   Shield,
   UserCheck,
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/materials", label: "Materials", icon: Package, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/suppliers", label: "Suppliers", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/employees", label: "Team", icon: Users, roles: ["ADMIN", "MANAGER"] },
+  { href: "/reports", label: "Reports", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
   { href: "/settings", label: "Settings", icon: Settings, roles: ["ADMIN"] },
 ];
 

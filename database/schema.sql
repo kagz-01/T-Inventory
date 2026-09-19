@@ -179,6 +179,14 @@ CREATE TABLE IF NOT EXISTS materials (
 CREATE INDEX IF NOT EXISTS idx_materials_category ON materials(category);
 CREATE INDEX IF NOT EXISTS idx_materials_org ON materials(organizationId);
 
+-- ── Expanded materials columns (Phase 1) ───────────────────────────────────
+
+DO $$ BEGIN
+    ALTER TABLE materials ADD COLUMN IF NOT EXISTS costPerUnit double precision;
+    ALTER TABLE materials ADD COLUMN IF NOT EXISTS supplierId text REFERENCES vendors(id);
+EXCEPTION WHEN duplicate_column THEN null;
+END$$;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- MATERIAL PHOTOS
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -372,6 +380,210 @@ INSERT INTO organizations (id, name, contactEmail, contactPhone, currency)
 VALUES ('org_touchline', 'Touchline', 'info@touchlineltd.co.ke', '+254722668696', 'KES')
 ON CONFLICT (id) DO NOTHING;
 
+-- =============================================================================
+-- PHASE 1 — Stock Movements
+-- =============================================================================
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'stock_movement_type') THEN
+        CREATE TYPE stock_movement_type AS ENUM ('RECEIVED','ISSUED','ADJUSTED','RETURNED','SCRAPPED');
+    END IF;
+END$$;
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  materialId TEXT NOT NULL REFERENCES materials(id),
+  type stock_movement_type NOT NULL,
+  quantity double precision NOT NULL,
+  referenceType TEXT,
+  referenceId TEXT,
+  notes TEXT,
+  actorId TEXT NOT NULL REFERENCES users(id),
+  createdAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_org ON stock_movements(organizationId, createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_stock_movements_material ON stock_movements(materialId);
+
+-- ── Link tasks to orders ────────────────────────────────────────────────────
+
+DO $$ BEGIN
+    ALTER TABLE sourcing_tasks ADD COLUMN IF NOT EXISTS customerOrderId TEXT REFERENCES customer_orders(id);
+EXCEPTION WHEN duplicate_column THEN null;
+END$$;
+
+CREATE INDEX IF NOT EXISTS idx_sourcing_tasks_order ON sourcing_tasks(customerOrderId);
+
+-- =============================================================================
+-- PHASE 2 — Customer Orders + Production Jobs
+-- =============================================================================
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+        CREATE TYPE order_status AS ENUM (
+            'ENQUIRY','QUOTE_SENT','QUOTE_ACCEPTED','IN_PRODUCTION',
+            'QUALITY_CHECK','READY','DELIVERED','INSTALLED','COMPLETED','CANCELLED'
+        );
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_type') THEN
+        CREATE TYPE order_type AS ENUM ('SIGNAGE','BRANDING','MIXED');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'job_status') THEN
+        CREATE TYPE job_status AS ENUM ('QUEUED','IN_PROGRESS','ON_HOLD','COMPLETED','CANCELLED');
+    END IF;
+END$$;
+
+CREATE TABLE IF NOT EXISTS customer_orders (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  orderNumber SERIAL,
+  customerName TEXT NOT NULL,
+  customerContact TEXT,
+  description TEXT NOT NULL,
+  orderType order_type NOT NULL DEFAULT 'SIGNAGE',
+  status order_status NOT NULL DEFAULT 'ENQUIRY',
+  quotedAmount double precision,
+  paidAmount double precision DEFAULT 0,
+  dueDate date,
+  deliveryAddress TEXT,
+  notes TEXT,
+  createdById TEXT NOT NULL REFERENCES users(id),
+  createdAt timestamptz NOT NULL DEFAULT now(),
+  updatedAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_org ON customer_orders(organizationId, createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_customer_orders_status ON customer_orders(status);
+
+CREATE TABLE IF NOT EXISTS customer_order_items (
+  id TEXT PRIMARY KEY,
+  customerOrderId TEXT NOT NULL REFERENCES customer_orders(id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  quantity double precision NOT NULL DEFAULT 1,
+  unitPrice double precision,
+  notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_coi_order ON customer_order_items(customerOrderId);
+
+CREATE TABLE IF NOT EXISTS production_jobs (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  customerOrderId TEXT REFERENCES customer_orders(id),
+  title TEXT NOT NULL,
+  status job_status NOT NULL DEFAULT 'QUEUED',
+  assignedToId TEXT REFERENCES users(id),
+  estimatedHours double precision,
+  actualHours double precision,
+  startDate date,
+  dueDate date,
+  completedAt timestamptz,
+  notes TEXT,
+  createdById TEXT NOT NULL REFERENCES users(id),
+  createdAt timestamptz NOT NULL DEFAULT now(),
+  updatedAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_production_jobs_org ON production_jobs(organizationId, createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_production_jobs_status ON production_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_production_jobs_assigned ON production_jobs(assignedToId);
+
+CREATE TABLE IF NOT EXISTS production_materials (
+  id TEXT PRIMARY KEY,
+  productionJobId TEXT NOT NULL REFERENCES production_jobs(id) ON DELETE CASCADE,
+  materialId TEXT NOT NULL REFERENCES materials(id),
+  quantityUsed double precision NOT NULL,
+  issuedBy TEXT REFERENCES users(id),
+  issuedAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_prod_materials_job ON production_materials(productionJobId);
+
+-- =============================================================================
+-- PHASE 3 — Purchase Orders + Quotations
+-- =============================================================================
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'po_status') THEN
+        CREATE TYPE po_status AS ENUM ('DRAFT','SUBMITTED','PARTIAL','RECEIVED','CANCELLED');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'quotation_status') THEN
+        CREATE TYPE quotation_status AS ENUM ('PENDING','ACCEPTED','REJECTED','EXPIRED');
+    END IF;
+END$$;
+
+CREATE TABLE IF NOT EXISTS purchase_orders (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  supplierId TEXT NOT NULL REFERENCES vendors(id),
+  status po_status NOT NULL DEFAULT 'DRAFT',
+  totalEstimate double precision,
+  expectedDate date,
+  notes TEXT,
+  createdById TEXT NOT NULL REFERENCES users(id),
+  createdAt timestamptz NOT NULL DEFAULT now(),
+  updatedAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_po_org ON purchase_orders(organizationId, createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_po_supplier ON purchase_orders(supplierId);
+
+CREATE TABLE IF NOT EXISTS purchase_order_items (
+  id TEXT PRIMARY KEY,
+  purchaseOrderId TEXT NOT NULL REFERENCES purchase_orders(id) ON DELETE CASCADE,
+  materialId TEXT NOT NULL REFERENCES materials(id),
+  quantityOrdered double precision NOT NULL,
+  quantityReceived double precision DEFAULT 0,
+  unitCost double precision,
+  notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_poi_order ON purchase_order_items(purchaseOrderId);
+
+CREATE TABLE IF NOT EXISTS quotations (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  supplierId TEXT NOT NULL REFERENCES vendors(id),
+  materialDescription TEXT NOT NULL,
+  quotedPrice double precision NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'KES',
+  quantity double precision,
+  validUntil date,
+  notes TEXT,
+  status quotation_status NOT NULL DEFAULT 'PENDING',
+  createdById TEXT NOT NULL REFERENCES users(id),
+  createdAt timestamptz NOT NULL DEFAULT now(),
+  updatedAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_quotations_org ON quotations(organizationId, createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_quotations_supplier ON quotations(supplierId);
+
+-- =============================================================================
+-- PHASE 4 — Attendance + Activity Events
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS attendance (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  userId TEXT NOT NULL REFERENCES users(id),
+  date date NOT NULL,
+  clockIn timestamptz,
+  clockOut timestamptz,
+  status TEXT NOT NULL DEFAULT 'ABSENT' CHECK (status IN ('PRESENT','ABSENT','HALF_DAY','LEAVE')),
+  notes TEXT,
+  createdAt timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(organizationId, userId, date)
+);
+CREATE INDEX IF NOT EXISTS idx_attendance_org_date ON attendance(organizationId, date DESC);
+CREATE INDEX IF NOT EXISTS idx_attendance_user ON attendance(userId, date DESC);
+
+CREATE TABLE IF NOT EXISTS activity_events (
+  id TEXT PRIMARY KEY,
+  organizationId TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  actorId TEXT NOT NULL REFERENCES users(id),
+  eventType TEXT NOT NULL,
+  entityType TEXT NOT NULL,
+  entityId TEXT NOT NULL,
+  metadata JSONB,
+  createdAt timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_activity_org_date ON activity_events(organizationId, createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_entity ON activity_events(entityType, entityId);
+
 -- ─────────────────────────────────────────────────────────────────────────────
--- Done. All inventory tables created. Existing leads + portfolio untouched.
+-- Done. Full schema with all phases (1-4).
 -- ─────────────────────────────────────────────────────────────────────────────
