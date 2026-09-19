@@ -1,0 +1,175 @@
+Yes — **Touchline Inventory (TI)** can be much more than a stock counter. It can become the internal **operations control center** for Touchline.
+
+The mockup I generated is built around that idea:
+
+### TI — Touchline Inventory
+
+**Core purpose:**
+
+> **Track. Manage. Execute. Grow.**
+
+It should let the boss see what is happening across the business, while employees use it to record what they receive, use, source, complete, and deliver.
+
+### Main modules
+
+```text
+TI — TOUCHLINE INVENTORY
+
+Dashboard
+│
+├── Inventory
+│   ├── All Items
+│   ├── Materials
+│   ├── Equipment
+│   ├── Packaging
+│   ├── Low Stock
+│   └── Stock Movement
+│
+├── Suppliers
+│   ├── Supplier Directory
+│   ├── Purchases
+│   ├── Quotations
+│   └── Supplier Performance
+│
+├── Orders
+│   ├── Purchase Orders
+│   ├── Customer Orders
+│   ├── Pending
+│   ├── Processing
+│   └── Completed
+│
+├── Tasks
+│   ├── Today's Tasks
+│   ├── Assigned To Me
+│   ├── In Progress
+│   ├── Completed
+│   └── Overdue
+│
+├── Employees
+│   ├── Team
+│   ├── Attendance
+│   ├── Activity
+│   └── Performance
+│
+├── Production
+│   ├── Jobs
+│   ├── Materials Used
+│   ├── Production Status
+│   └── Job History
+│
+├── Reports
+│   ├── Inventory
+│   ├── Purchases
+│   ├── Sales
+│   ├── Employee Activity
+│   └── Profit / Cost
+│
+└── Settings
+```
+
+### The really useful part
+
+Every important action should create an **activity trail**.
+
+For example:
+
+> **08:42 — James received 20 sheets of 3mm clear acrylic**
+> Supplier: SignWorld
+> PO: TL-0845
+> Quantity: +20
+> Location: Main Store
+
+Then:
+
+> **10:15 — Mary issued 4 acrylic sheets to Job #TL-1028**
+> Project: ABC Corporate Reception
+> Quantity: -4
+> Approved by: David
+
+Then:
+
+> **14:30 — James completed "Cut acrylic reception letters"**
+> Job: #TL-1028
+> Materials used: 4 sheets acrylic
+> Status: Completed
+
+That gives the boss a **traceable history of what happened**, rather than relying on verbal updates or notebooks.
+
+### Employee side
+
+An employee shouldn't see everything the administrator sees.
+
+For example:
+
+**Employee dashboard**
+
+```text
+Good morning, James 👋
+
+TODAY
+────────────────────────
+Assigned Tasks       5
+Completed            2
+In Progress          2
+Pending              1
+
+MY TASKS
+
+□ Install reception sign
+  10:00 AM
+  In Progress
+
+□ Collect acrylic sheets
+  11:30 AM
+  Pending
+
+□ Vehicle wrap inspection
+  2:00 PM
+  Pending
+
+[ + Report Stock Issue ]
+[ + Request Material ]
+[ ✓ Complete Task ]
+```
+
+### Boss/Admin side
+
+The boss gets the bigger picture:
+
+```text
+TODAY AT TOUCHLINE
+
+Inventory       1,248 items
+Low Stock          17
+Pending Orders     18
+Active Jobs        12
+Employees          12
+Tasks Completed    36
+
+          ↓
+
+WHERE IS MONEY GOING?
+Material purchases
+Supplier costs
+Production costs
+Job profitability
+
+          ↓
+
+WHAT IS EVERYONE DOING?
+Employee activity
+Task completion
+Attendance
+Job progress
+```
+
+That distinction is important: **TI shouldn't just be "inventory software."**
+
+It becomes:
+
+> **Touchline's internal operating system.**
+
+And because you're building it for Touchline itself, I'd design it so the system eventually connects **inventory → supplier → employee → task → production → customer order → completed job → cost/profit**.
+
+That would make TI a genuinely useful internal platform rather than just another stock-management dashboard.
+

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Package, AlertTriangle, Edit2, Trash2, Search } from "lucide-react";
+import StockMovements from "@/components/StockMovements";
 
 type Material = {
   id: string;
@@ -16,6 +17,8 @@ type Material = {
   stockOnHand: number;
   reorderThreshold: number;
   description: string | null;
+  costPerUnit: number | null;
+  supplierId: string | null;
   vendorLinks: any[];
 };
 
@@ -25,6 +28,7 @@ export default function MaterialsPage() {
   const [editing, setEditing] = useState<Material | null>(null);
   const [showDelete, setShowDelete] = useState<Material | null>(null);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Material | null>(null);
   const [form, setForm] = useState({
     name: "",
     category: "",
@@ -32,6 +36,8 @@ export default function MaterialsPage() {
     stockOnHand: 0,
     reorderThreshold: 0,
     description: "",
+    costPerUnit: "",
+    supplierId: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,11 +60,13 @@ export default function MaterialsPage() {
       stockOnHand: m.stockOnHand,
       reorderThreshold: m.reorderThreshold,
       description: m.description || "",
+      costPerUnit: m.costPerUnit?.toString() || "",
+      supplierId: m.supplierId || "",
     });
   }
 
   function resetForm() {
-    setForm({ name: "", category: "", unit: "", stockOnHand: 0, reorderThreshold: 0, description: "" });
+    setForm({ name: "", category: "", unit: "", stockOnHand: 0, reorderThreshold: 0, description: "", costPerUnit: "", supplierId: "" });
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -157,7 +165,8 @@ export default function MaterialsPage() {
             return (
               <Card
                 key={m.id}
-                className={`hover:shadow-md transition-all ${low ? "border-red-200 dark:border-red-800" : ""}`}
+                className={`hover:shadow-md transition-all cursor-pointer ${low ? "border-red-200 dark:border-red-800" : ""}`}
+                onClick={() => setSelected(m)}
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
@@ -215,6 +224,12 @@ export default function MaterialsPage() {
                         </span>
                       </div>
                     )}
+                    {m.costPerUnit != null && (
+                      <div className="flex items-center justify-between text-sm mt-1 pt-2 border-t border-border">
+                        <span className="text-muted-foreground">Cost</span>
+                        <span className="text-xs font-medium">KES {m.costPerUnit}</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -255,6 +270,7 @@ export default function MaterialsPage() {
                 <Input required placeholder="Category (e.g. Acrylic)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
                 <Input required placeholder="Unit (e.g. sheets)" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
                 <Input placeholder="Description (optional)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <Input type="number" placeholder="Cost per unit (KES)" value={form.costPerUnit} onChange={(e) => setForm({ ...form, costPerUnit: e.target.value })} />
                 <div className="grid grid-cols-2 gap-3">
                   <Input type="number" placeholder="Stock on hand" value={form.stockOnHand || ""} onChange={(e) => setForm({ ...form, stockOnHand: Number(e.target.value) })} />
                   <Input type="number" placeholder="Reorder threshold" value={form.reorderThreshold || ""} onChange={(e) => setForm({ ...form, reorderThreshold: Number(e.target.value) })} />
@@ -282,6 +298,7 @@ export default function MaterialsPage() {
                 <Input required placeholder="Category" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
                 <Input required placeholder="Unit" value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} />
                 <Input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                <Input type="number" placeholder="Cost per unit (KES)" value={form.costPerUnit} onChange={(e) => setForm({ ...form, costPerUnit: e.target.value })} />
                 <div className="grid grid-cols-2 gap-3">
                   <Input type="number" placeholder="Stock on hand" value={form.stockOnHand || ""} onChange={(e) => setForm({ ...form, stockOnHand: Number(e.target.value) })} />
                   <Input type="number" placeholder="Reorder threshold" value={form.reorderThreshold || ""} onChange={(e) => setForm({ ...form, reorderThreshold: Number(e.target.value) })} />
@@ -310,6 +327,46 @@ export default function MaterialsPage() {
                 <Button variant="destructive" onClick={handleDelete}>Delete</Button>
               </div>
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <Card className="w-full max-w-md animate-scale-in">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">{selected.name}</CardTitle>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelected(null)}>
+                ✕
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Category</span>
+                  <span className="font-medium">{selected.category}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Unit</span>
+                  <span className="font-medium">{selected.unit}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Stock on hand</span>
+                  <span className="font-medium">{selected.stockOnHand} {selected.unit}</span>
+                </div>
+                {selected.costPerUnit != null && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Cost per unit</span>
+                    <span className="font-medium">KES {selected.costPerUnit}</span>
+                  </div>
+                )}
+              </div>
+              <div className="pt-2 border-t border-border">
+                <h4 className="text-sm font-medium mb-2">Stock Movements</h4>
+                <StockMovements materialId={selected.id} unit={selected.unit} />
+              </div>
+            </CardContent>
           </Card>
         </div>
       )}

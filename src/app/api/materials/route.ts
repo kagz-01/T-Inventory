@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
   const lowStock = searchParams.get("lowStock") === "true";
   const search = searchParams.get("search") || undefined;
 
-  // Basic material list — includes photos and vendor links fetched separately per material
   let query = supabaseAdmin.from('materials').select('*').eq('organizationId', user.organizationId).order('name', { ascending: true });
   if (category) query = query.eq('category', category);
   if (search) query = query.ilike('name', `%${search}%`);
@@ -22,7 +21,6 @@ export async function GET(req: NextRequest) {
     const { data: photos } = await supabaseAdmin.from('material_photos').select('*').eq('materialId', m.id).order('createdAt', { ascending: false }).limit(3);
     (m as any).photos = photos ?? [];
     const { data: links } = await supabaseAdmin.from('vendor_materials').select('*').eq('materialId', m.id);
-    // attach vendor info for each link
     for (const l of links ?? []) {
       const { data: v } = await supabaseAdmin.from('vendors').select('id,name').eq('id', l.vendorId).maybeSingle();
       (l as any).vendor = v ?? null;

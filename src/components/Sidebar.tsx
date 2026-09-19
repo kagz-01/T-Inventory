@@ -16,7 +16,8 @@ import {
   Moon,
   Target,
   Search,
-  FolderOpen,
+  ClipboardList,
+  Hammer,
   Crown,
   Shield,
   UserCheck,
@@ -27,21 +28,21 @@ import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+  { href: "/orders", label: "Orders", icon: ClipboardList, roles: ["ADMIN", "MANAGER"] },
+  { href: "/production", label: "Production", icon: Hammer, roles: ["ADMIN", "MANAGER"] },
   { href: "/tasks", label: "Tasks", icon: ListTodo, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
-  { href: "/projects", label: "Projects", icon: FolderOpen, roles: ["ADMIN", "MANAGER"] },
-  { href: "/leads", label: "Leads", icon: Target, roles: ["ADMIN", "MANAGER"] },
   { href: "/materials", label: "Materials", icon: Package, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
-  { href: "/vendors", label: "Vendors", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+  { href: "/suppliers", label: "Suppliers", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/employees", label: "Team", icon: Users, roles: ["ADMIN", "MANAGER"] },
   { href: "/settings", label: "Settings", icon: Settings, roles: ["ADMIN"] },
 ];
 
 const mobileTabs = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+  { href: "/orders", label: "Orders", icon: ClipboardList, roles: ["ADMIN", "MANAGER"] },
   { href: "/tasks", label: "Tasks", icon: ListTodo, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
-  { href: "/projects", label: "Projects", icon: FolderOpen, roles: ["ADMIN", "MANAGER"] },
   { href: "/materials", label: "Stock", icon: Package, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
-  { href: "/vendors", label: "Vendors", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
+  { href: "/suppliers", label: "Suppliers", icon: Truck, roles: ["ADMIN", "MANAGER", "EMPLOYEE"] },
   { href: "/settings", label: "More", icon: Settings, roles: ["ADMIN"] },
   { href: "/employees", label: "Team", icon: Users, roles: ["ADMIN", "MANAGER"] },
 ];

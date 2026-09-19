@@ -7,6 +7,17 @@ export const materialSchema = z.object({
   description: z.string().optional(),
   stockOnHand: z.number().min(0).default(0),
   reorderThreshold: z.number().min(0).default(0),
+  costPerUnit: z.number().min(0).optional(),
+  supplierId: z.string().optional(),
+});
+
+export const stockMovementSchema = z.object({
+  materialId: z.string().min(1),
+  type: z.enum(["RECEIVED", "ISSUED", "ADJUSTED", "RETURNED", "SCRAPPED"]),
+  quantity: z.number().positive(),
+  referenceType: z.string().optional(),
+  referenceId: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const vendorSchema = z.object({
@@ -98,4 +109,71 @@ export const organizationUpdateSchema = z.object({
   contactEmail: z.string().email().optional().or(z.literal("")),
   contactPhone: z.string().optional(),
   currency: z.string().min(1).optional(),
+});
+
+export const customerOrderSchema = z.object({
+  customerName: z.string().min(1),
+  customerContact: z.string().optional(),
+  description: z.string().min(1),
+  orderType: z.enum(["SIGNAGE", "BRANDING", "MIXED"]).default("SIGNAGE"),
+  status: z.enum([
+    "ENQUIRY", "QUOTE_SENT", "QUOTE_ACCEPTED", "IN_PRODUCTION",
+    "QUALITY_CHECK", "READY", "DELIVERED", "INSTALLED", "COMPLETED", "CANCELLED",
+  ]).optional(),
+  quotedAmount: z.number().min(0).optional(),
+  paidAmount: z.number().min(0).optional(),
+  dueDate: z.string().optional(),
+  deliveryAddress: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const customerOrderItemSchema = z.object({
+  description: z.string().min(1),
+  quantity: z.number().positive().default(1),
+  unitPrice: z.number().min(0).optional(),
+  notes: z.string().optional(),
+});
+
+export const productionJobSchema = z.object({
+  customerOrderId: z.string().optional(),
+  title: z.string().min(1),
+  status: z.enum(["QUEUED", "IN_PROGRESS", "ON_HOLD", "COMPLETED", "CANCELLED"]).optional(),
+  assignedToId: z.string().optional(),
+  estimatedHours: z.number().min(0).optional(),
+  actualHours: z.number().min(0).optional(),
+  startDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const productionMaterialSchema = z.object({
+  materialId: z.string().min(1),
+  quantityUsed: z.number().positive(),
+  notes: z.string().optional(),
+});
+
+export const purchaseOrderSchema = z.object({
+  supplierId: z.string().min(1),
+  status: z.enum(["DRAFT", "SUBMITTED", "PARTIAL", "RECEIVED", "CANCELLED"]).optional(),
+  totalEstimate: z.number().min(0).optional(),
+  expectedDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const purchaseOrderItemSchema = z.object({
+  materialId: z.string().min(1),
+  quantityOrdered: z.number().positive(),
+  unitCost: z.number().min(0).optional(),
+  notes: z.string().optional(),
+});
+
+export const quotationSchema = z.object({
+  supplierId: z.string().min(1),
+  materialDescription: z.string().min(1),
+  quotedPrice: z.number().min(0),
+  currency: z.string().default("KES"),
+  quantity: z.number().min(0).optional(),
+  validUntil: z.string().optional(),
+  notes: z.string().optional(),
+  status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "EXPIRED"]).optional(),
 });

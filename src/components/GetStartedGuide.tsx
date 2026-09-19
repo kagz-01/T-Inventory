@@ -43,10 +43,10 @@ export default function GetStartedGuide({
     },
     {
       step: 4,
-      title: "Add Your Vendor Directory",
-      description: "List your sourcing partners and branding vendors with pricing.",
+      title: "Add Your Supplier Directory",
+      description: "List your sourcing partners and branding suppliers with pricing.",
       done: false,
-      href: "/vendors",
+      href: "/suppliers",
     },
   ];
 
